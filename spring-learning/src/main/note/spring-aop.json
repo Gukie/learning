@@ -1,0 +1,85 @@
+# refer:
+- https://www.oschina.net/translate/comparative_analysis_between_spring_aop_and_aspectj (Spring AOP 与 AspectJ的区别)
+- https://blog.csdn.net/dm_vincent/article/details/57526325 (AOP的两种实现-Spring AOP以及AspectJ)
+
+AOP： 希望将 跨对象的点连接起来形成一个面，组成一个模块化，进行统一管理
+
+Spring AOP vs AspectJ
+	Spring AOP
+		- Spring AOP 是与 Spring IOC 容器结合使用的，只能管理Spring IOC容器中的beans. Spring IOC之外的bean，管理不了. 比如 通过new出来的
+		- Spring AOP 是基于代理的. 
+			所有的调用都是基于代理的，只有代理类的方法调用才能回本拦截; 
+			所以如果代理了某个类，调用了该类的某个方法，而该方法又调用了该类的另一个方法，那么另一个方法被调用的时候，是不会被拦截的.(因为它的调用方不是代理类而是 this)
+		- 所以在处理新业务的时候比较好用，毕竟新业务中的bean都可以用Spring来管理; 如果想改造旧系统，而旧系统中有些bean不是通过 Spring管理的，那么Spring AOP就不适合
+	AspectJ
+		1. 可以处理以上 两个AOP处理不了的case
+		2. 由于Spring AOP是基于代理的，对于 final的method，是代理不了的; 这时候AspectJ可以； 同样的，AspectJ甚至可以代理 field和 private的方法
+		2. 但是AspectJ比较重，学习成本比较高
+
+1.  Spring AOP is proxy-based, 在类内部调用自己的方法的时候，不会走proxy，而是走的自己
+2.  AspectJ does not have this self-invocation issue because it is not a proxy-based AOP framework
+
+
+
+最大的区别在于两者实现AOP的底层原理不太一样：
+
+Spring AOP: 基于代理(Proxying)
+AspectJ: 基于字节码操作(Bytecode Manipulation)
+
+
+------------------------
+
+
+AspectJ 做注入工作，如果没有特别的指定，是在对象被创建之后，通过调用对象的setter方法进行设置的；
+所以在 construction阶段， property是没有被构建出来的;
+如果想在 construction阶段，property就可以使用，需要增加 一个属性：@Configurable(preConstruction=true)
+
+3. 这些，本质上都是通过 AnnotationBeanConfigurerAspect 类进行的，所以该类需要被注入进来
+   The AnnotationBeanConfigurerAspect itself needs configuring by Spring (in order to obtain a reference to the bean factory that is to be used to configure new objects)
+   可通过以下方式注入进来：
+	1. @EnableSpringConfigured
+	2. <context:spring-configured/>
+	
+	
+4. 对于在Spring 容器中声明过的Bean，在其class上不要再加 @Configurable注解了，否则会生成两个bean： 一个是通过Spring容器，一个是通过AspectJ生成的
+
+
+@Configurable - AnnotationBeanConfigurerAspect -- 一般用于将一个Bean定义为切面
+@Transactional  - AnnotationTransactionAspect
+
+@Transactional 
+	- 定义在class上，该类的所有public的方法都会被作用到
+	- 定义在class上的method上时，作用到 定义的method上. 该method可以是public或者private
+	
+	
+5. Load-time weaving (LTW) refers to the process of weaving AspectJ aspects into an application’s class files as they are being loaded into the Java virtual machine (JVM).
+	5.1. The AspectJ weaver takes class files as input and produces class files as output
+	5.2. 编织的过程，可以发生在三个阶段：
+		5.2.1. compile-time： 编译的时候
+		5.2.2. post-compile-time
+		5.2.3. load-time: class文件被classloader加载到JVM中的时候
+		
+-----------------------------
+是否以下两个，有一个就ok了？ - 不是，他们分别有自己的作用
+
+<aop:config>  - Spring AOP里 使用XML进行配置AOP
+<aop:aspectj-autoproxy> - Spring AOP中@AspectJ 注解的使用
+<tx:annotation-driven/> - 声明了这个，在项目中，事务注解(比如 @Transactional)就可以使用了
+
+
+
+只要有一个地方使用了 proxy-target-class= "true" 就可以了，其他的都会被强制使用 CGLIB代理的
+> Multiple <aop:config/> sections are collapsed into a single unified auto-proxy creator at runtime, which applies the strongest proxy settings that any of the <aop:config/> sections (typically from different XML bean definition files) specified. This also applies to the <tx:annotation-driven/> and <aop:aspectj-autoproxy/> elements.
+
+>To be clear: using proxy-target-class="true" on <tx:annotation-driven/>, <aop:aspectj-autoproxy/> or <aop:config/> elements will force the use of CGLIB proxies for all three of them.
+
+6.  JDK动态代理 vs CGLIB代理
+- 静态代理： 程序发布的时候，代理类就已经存在了; 这种方式一般是针对一个类，需要写一个代理类，不够灵活; 而动态代理是 程序动态创建代理类，灵活
+- JDK动态代理： 基于反射实现的，JdkDynamicAopProxy 实现了 InvokationHandler
+	-- 代理类，是通过 Proxy.newProxyInstance 实现的
+	-- 方法调用，是通过 JdkDynamicAopProxy类中的 invoke方法进行的 
+- CGLIB代理，是通过字节码增强，即 Spring的Enhancer. 真正调用方法的时候，是通过 CglibAopProxy中的DynamicAdvisedInterceptor进行方法调用的
+	-- 代理类是， Enhancer
+	-- 方法调用，是通过 CglibAopProxy中的DynamicAdvisedInterceptor中 的intercept 进行的
+	
+他们的target bean在生成后，都是通过 BeanPostProcessor 生成对应到  proxy bean的

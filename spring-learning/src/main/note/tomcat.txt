@@ -1,0 +1,197 @@
+## refer:
+- http://tomcat.apache.org/tomcat-9.0-doc/introduction.html
+- https://blog.csdn.net/qq_16681169/article/details/75003640 (tomcat 线程模型)
+- https://yq.aliyun.com/articles/2889?spm=5176.100239.blogcont39093.8.s7Uavb (tomcat 线程模型)
+
+## 调优
+- 修改Connector的protocol为 NIO
+- 可以调整 tomcat 的线程数，以支持更多的请求(Connector之间共享或者Connector内部的)
+- 可以调整 connector 的keepAliveTimeout参数，以减少连接创建的次数：一个connection，在一个request处理完之后，下一个request到来之前等待的时间
+- 可以在 Engine或者Context或者Host下配置 <valve> 对一些黑名单对域名或者IP进行过滤，这denied掉
+
+## 术语
+Context - In a nutshell, a Context is a web application.
+
+
+## HTTP Connector
+
+
+### 线程池
+1. 每个Service下，都有一个线程池，称为：Executor； 它是当前Service下的各个Connector之间共用的. 
+2. 如果Service下没有定义Executor，那么每个Connector会有自己的internal thread pool; 他们的优先级是： 优先使用Connector之间共享的，而非Connector内部的
+2. 每一个请求过来，connector 都会分配一个线程给它，直到该请求结束，该线程才会被收回放到线程池中
+3. 当请求数超过一定数量，线程池里面的线程数不够时
+	3.1. 当此时线程池中的线程数没有达到 maxThreads，会创建额外的线程去处理新的请求
+	3.2. 如果线程数已经达到 maxThreads，但还是有新的请求过来，但是新的请求数小于 acceptCount，此时该请求会被阻塞起来，等待被处理
+	3.3. 如果阻塞的请求数量已经达到 acceptCount，但是还有新的请求过来，此时会被拒绝. 客户端会收到 "connection refused"
+4. connector中有一个参数叫 'executor'，可以配置让当前connector使用外部的executor; 如果没有配置，则会使用自己私有的线程池	
+5. 参数 maxConnections vs maxThreads
+	5.1. maxConnections, connector能接受的最大连接数; 一个连接关闭之前, 可以处理多个请求
+	5.2. maxThreads,指的是connector同时能处理多少请求
+
+>Each incoming request requires a thread for the duration of that request. If more simultaneous requests are received than can be handled by the currently available request processing threads, additional threads will be created up to the configured maximum (the value of the maxThreads attribute). If still more simultaneous requests are received, they are stacked up inside the server socket created by the Connector, up to the configured maximum (the value of the acceptCount attribute). Any further simultaneous requests will receive "connection refused" errors, until resources are available to process them.
+
+### protocol - connector的选择
+```
+<Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+```
+1. HTTP Connector的 protocol，默认是 'HTTP/1.1'. 所使用的connect就会在以下两种connect中自动切换了：
+	1.1. APR/native connector. (如果 tomcat的native library可以被找到, 比如环境变量PATH中配置了)
+	1.2. Java NIO based connector(上面那种connector不适用的时候)
+	1.3. 可以显式的指定 使用的connector，即将protocol的值显式指定为以下的其中一种：
+		1.3.1. org.apache.coyote.http11.Http11NioProtocol - non blocking Java NIO connector
+		1.3.2. org.apache.coyote.http11.Http11Nio2Protocol - non blocking Java NIO2 connector
+		1.3.3. org.apache.coyote.http11.Http11AprProtocol - the APR/native connector.
+		1.3.4. 从官网来看，他们之间的不同之处在与 SSL上，比如 APR在SSL handshake(握手)阶段，是blocking的，而其他两个是 non-blocking
+
+
+	
+### SSL 
+#### how to configure
+- please refer to apache document :apache-tomcat-9.0-doc/ssl-howto.html
+#### Certificate 
+一个证书(Certificate)，需要被签名，才能被认可使用; 签名的方式有两种： 第三方机构签名 和 自签
+
+1. CA(Certificate Authorities): 第三方证书签名机构; 只有经过这种方式签名的证书，在使用时，浏览器才不会报warning
+2. 自签：证书由自己签名，一般用于测试场景
+
+
+## context
+1. 一个Context代表着一个web application
+2. context-path,context-version, context-name, web-app-name
+	2.1. 如果context-version没有定义，那么 context-name 跟context-path是一样的
+	2.2. 如果context-version定义了，那么 context-name = {context-path}##{context-version}
+	2.3. web-app-name的名字: {context-path去掉第一个"/"} + {context-path后面的"/"以"#"替换}+{如果version定义了，再加上##{context-version}}
+	2.4. 如果context-path为空，那么: 
+		2.4.1. context-name 也是为空的
+		2.4.2. 找的web-app-name是 ROOT
+	2.5. 以上的前提是： Host自动部署web程序. 即 autoDeploy or deployOnStartup 被设置为了true	
+		
+Context Path	Context Version			Context Name	Base File Name		Example File Names (.xml, .war & directory)
+/foo				None				/foo				foo					foo.xml, foo.war, foo
+/foo/bar			None				/foo/bar			foo#bar				foo#bar.xml, foo#bar.war, foo#bar
+Empty String		None				Empty String		ROOT				ROOT.xml, ROOT.war, ROOT
+/foo				42					/foo##42			foo##42				foo##42.xml, foo##42.war, foo##42
+/foo/bar			42					/foo/bar##42		foo#bar##42			foo#bar##42.xml, foo#bar##42.war, foo#bar##42
+Empty String		42					##42				ROOT##42			ROOT##42.xml, ROOT##42.war, ROOT##42
+
+### context-path
+ A context path must either be an empty string or start with a '/' and do not end with a '/'
+
+#### docBase vs appBase
+1. docBase, 是Context的参数； appBase是Host的参数
+2. Host-appBase
+	2.1. 该参数代表着当前 host的 web app的根目录
+	2.2. 该参数的值，可以是一个绝对路径，也可以是一个 相对于 $CATALINA_BASE 的相对路径
+	2.3. 如果没有设置，那么 它的值将会是 webapps 的默认值将会( webapps的默认值是什么？是web-app 的文件名字？)
+	
+3. Context-docBase
+	3.1. 该参数，也将 context ROOT，(即 web app的根目录?)
+	3.2. 改参数的值，可以是一个绝对路径，也可以是一个 相对于 Host-appBase的一个相对路径
+	3.3. 只有在以下情况下，才需要设置它：
+		3.3.1. 在Server.xml中，配置了 Context
+		3.3.2. docBase所在的路径不在 appBase下面
+
+### 自定义Context
+不建议在 server.xml中配置 Context，因为对 server.xml中的context的修改只有在重启之后才会生效，这样就会造成频繁的重启
+
+一般的，自定义的context，可以定义在以下这几个地方：
+1. 在web应用程序的 /META-INF/ 下定义一个 context.xml文件. 即： /META-INF/context.xml. 
+   该文件在满足以下情况下，会被copy到 $CATALINA_BASE/conf/[enginename]/[hostname]/，并且会被重命名为: {应用程序的Base name(即: web-app-name)}再加上".xml"的后缀
+	1.1. Host的deployXML为true(默认为true)
+	1.2. 并且 Host的copyXML为true. 
+		该参数默认为false; 设置为true之后，应用程序中的/META-INF/context.xml会被copy到 Host的xmlBase所配置的地址
+		需要注意的是: 第一次启动之后， /META-INF/context.xml会被copy到 Host-xmlBase所在的位置, 在后续的启动，应用程序的/META-INF/context.xml将不会被用到，即使它们有内容更新(因为$CATALINA_BASE/conf/[enginename]/[hostname]/下的配置文件拥有更高的优先级)
+	1.3. Host-xmlBase
+		它是指一个 Host的xml配置文件存放的地址， 可以是一个绝对路径，也可以是一个相对于 $CATALINA_BASE的相对路径. 默认值： conf/<engine_name>/<host_name>
+		
+2. $CATALINA_BASE/conf/[enginename]/[hostname]/ 下的配置文件. 该目录下的配置文件，会比 web application's META-INF directory下的context.xml 拥有更高的优先级; 
+   注: 这里的配置文件的名字不一定要跟应用程序的名字保持一致
+3. 在 conf/server.xml里定义的 context
+4. 除了 conf/server.xml, 其他地方的context配置文件里，只能有一个Context element
+
+
+可以定义一份 context，供多个应用程序使用. 但是每个应用程序在使用的时候，都是 copy一份，相互之间是独立的(相当于是一个继承关系); 自定义的context中的配置会覆盖其父类context的配置
+1. $CATALINA_BASE/conf/context.xml: 这里配置的信息，会被所有的应用程序加载 - 这里的是Global的
+2.  $CATALINA_BASE/conf/[enginename]/[hostname]/context.xml.default： 会被该host下的所有应用程序加载 - 这里是次Global的; 而自定义的，是最终落地的
+
+#### context default
+```
+	<Host name="localhost"  appBase="my-webapps"
+            unpackWARs="false" autoDeploy="false">
+
+        <!-- SingleSignOn valve, share authentication between web applications
+             Documentation at: /docs/config/valve.html -->
+        <!--
+        <Valve className="org.apache.catalina.authenticator.SingleSignOn" />
+        -->
+		
+		<Context path="" docBase="D:\\software\\apache-tomcat-9.0.10\\webapps\\ROOT"></Context> <!--必须要有一个default的context，否则 http://localhost:{port} 不会拿到任何数据 -->
+		<Context path="/sample" docBase="non-mine/sample"></Context> <!-- 这是一个相对会找的是 my-webapps/non-mine/sample 下的文件 -->
+		<Context path="/example" docBase="D:\\software\\apache-tomcat-9.0.10\\webapps\\examples"></Context>
+
+        <!-- Access log processes all example.
+             Documentation at: /docs/config/valve.html
+             Note: The pattern used is equivalent to using pattern="common" -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+      </Host>
+```
+
+#### context的自定义注意事项
+需要注意的是： 
+	1. context的path
+		1.1. 在 conf/server.xml 才有用
+		1.2. 在其他地方会无效，比如conf/[enginename]/[hostname], 会被context所在的配置文件名或者 docBase的名字给覆盖掉； 所以
+			1.2.1. 一般的，context配置文件的名字，就是 docBase的名字
+			1.2.2. 一般在conf/server之外，path是不定义的，定义了也无效; 反而在path跟配置文件名不一致时，带来多余的困扰
+	2. context的docBase，可以是绝对路径，也是开始相对路径： 如果是相对路径，需要注意
+		2.1. 在conf/server.xml中，是有效的，它是相对 appBase的相对路径
+		2.2. 在conf/server.xml外，需要注意的是，docBase指定的相对路径不能在appBase目录下; 除此之外没有限制
+
+		
+### classloader
+1. tomcat里的classloader的层级关系
+
+	Bootstrap			: $JAVA_HOME/jre/lib + $JAVA_HOME/jre/lib/ext 中的 类
+		|
+	  System			: $CLASSPATH 定义的 类
+		|
+	  Common			: $CATALINA_BASE/lib + $CALINA_HOME/lib 中的类
+	   /   \
+   Webapp1 Webapp2 ...	: 应用程序中 /WEB-INF/classes+/WEB-INF/lib 中的类, 对其他应用程序不可见
+   
+   
+2. tomcat加载类的顺序
+   在web应用程序中，当一个加载类的请求过来，tomcat默认会按以下顺序找类，找到就结束
+	 1. Bootstrap
+	 2. 使用当前web应用程序的classloader，去：
+		2.1. /WEB-INF/classes
+		2.2. /WEB-INF/lib
+	 3. System
+	 4. Common
+	 
+	如果在 context下配置了classloader，并且为其配置了 <Loader delegate="true"/>，那么加载顺序就会按照 Java默认的委派双亲方式进行加载:
+	1. Bootstrap
+	2. System
+	3. Common
+	4. WebappX
+		4.1. /WEB-INF/classes
+		4.2. /WEB-INF/lib
+  
+	
+### tomcat线程模型
+可以从tomcat源码 AbstractEndPoint::start() 中得知其线程模型
+1. 首先，tomcat采用的是 acceptor-worker 的线程模型进行工作的
+2. 启动的时候，会做：
+	2.1. 启动acceptor 线程，数量： 1个
+	2.2. 启动Poller线程，数量： 最多2个，取<2,机器处理器>的最小值 (只有NioEndpoint才会，Nio2Endpoint不会启动这个)
+	2.3. 创建一个线程池，默认是： 最小线程数10， 最大线程数200 (这里的线程，是正真的 worker线程)
+	
+3. 一个连接过来的时候
+	3.1. 如果是NioEndpoint， 会将它放到 PollerEventQueue中，然后 Poller线程会从其中取，然后创建 SocketProcessor(一个线程) 放到线程池中进行处理
+	3.2. 如果是Nio2Endpoint， 会直接创建SocketProcessor，交给线程池进行处理; 因为它没有 PollerEventQueue

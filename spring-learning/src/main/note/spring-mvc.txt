@@ -1,0 +1,16 @@
+
+
+### Questions
+- Root-WebApplicationContext 就是 web应用中的 Spring IOC container?
+>- 是的
+
+### DispatcherServlet
+- 是Spring框架封装 HttpServlet的实现，
+- 同时，DispatcherServlet中会有一个 WebApplicationContext，这样 DispatcherServlet就被纳入Spring容器的管理范围了
+
+
+### Context 继承关系
+- 每一个JVM中的每一个 web-app，都有一个 Root-WebApplicationContext，并且只有一个. 它定义一些基础的bean，比如持久层的DAO 的Bean
+- 每一个Servlet，都有自己的 Servlet-WebApplicationContext(可以叫做Servlet-Context)，相互之间是独立的
+- 每一个 Servlet-WebApplicationContext，都会将自己的parent设置成 Root-WebApplicationContext
+

@@ -5,10 +5,13 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,8 +47,15 @@ public class NioServer {
         int validOperations = serverSocketChannel.validOps();
         serverSocketChannel.register(selector,validOperations);
 
-        while(true){
 
+
+        // decoder
+        Charset charset = Charset.forName("UTF-8");
+        CharsetDecoder decoder = charset.newDecoder();
+
+
+        while(true){
+            // 4. Selector.select() to wait until there is Channel ready for I/O
             selector.select();
 
             Set<SelectionKey> selectionKeySet = selector.selectedKeys();
@@ -62,15 +72,41 @@ public class NioServer {
                     iterator.remove();
 
                 }else if(selectionKey.isReadable()){
+                    System.out.println("ready for read...");
                     SocketChannel connection = (SocketChannel) selectionKey.channel();
-                    ByteBuffer msgBuf = ByteBuffer.allocate(4);
-                    int byteCount = connection.read(msgBuf);
-//                    StringBuilder msg = new StringBuilder();
-                    while(byteCount> 0){
 
-//                        byte[] bytes = msgBuf.array();
-                        System.out.println(new String(msgBuf.array()));
-                        byteCount = connection.read(msgBuf);
+                    int bufferCapacity = 3;
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(bufferCapacity);
+                    CharBuffer charBuffer = CharBuffer.allocate(bufferCapacity);
+
+                    int readNum = connection.read(byteBuffer);
+//                    StringBuilder msg = new StringBuilder();
+                    while(readNum> 0){
+//                        System.out.println("************ read start...");
+//                        byte[] bytes = byteBuffer.array();
+                        byteBuffer.flip();
+//                        decoder.decode(byteBuffer,charBuffer,readNum<bufferCapacity);// 这时候，msgBuf的position会被设置为： msgBuf的原来的position+能被decode到的byte的长度(可能有的byge不能够decode，此时 msgBuf的position就不会等于msgBuf的limit)
+                        decoder.decode(byteBuffer,charBuffer,true);// 这时候，msgBuf的position会被设置为： msgBuf的原来的position+能被decode到的byte的长度(可能有的byge不能够decode，此时 msgBuf的position就不会等于msgBuf的limit)
+                        charBuffer.flip();
+                        System.out.print(charBuffer.toString());
+
+                        // 将没有解码的数据，存起来
+                        int notReadCount = byteBuffer.remaining();
+                        byte[] notReadByte = null;
+                        if(notReadCount>0){
+                            notReadByte = new byte[notReadCount];
+                            byteBuffer.get(notReadByte);
+                        }
+
+                        byteBuffer.clear();
+                        charBuffer.clear();
+
+                        //如果有多余的字节没有被处理，应该放进来，以便下一次被处理
+                        if(notReadByte!=null){
+                            byteBuffer.put(notReadByte);
+                        }
+                        readNum = connection.read(byteBuffer);
+//                        System.out.println("************ read end...");
                     }
 
                 }else if(selectionKey.isWritable()){

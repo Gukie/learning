@@ -1,0 +1,51 @@
+## refer
+- https://examples.javacodegeeks.com/core-java/nio/java-nio-tutorial-beginners/ (基本概念)
+
+## ByteBuffer 处理中文乱码
+从Channel读取数据的时候，是从channel中取 byteBuffer能接收的字节数，即: remaining() 数量
+这就很可能会将中文截取错误;
+
+这可以通过 Decoder来解决：
+- decoder 一次只从ByteBuffer中读取 decoder能解析出来的字节数;
+- 我们可以将 ByteBuffer多余的字节数，存起来，在下一次从Channel中读取的时候先将它存放进去
+- 这样，每一次decoder都会只解析可以解析的字节数，并且不会遗漏
+
+具体code如下：
+```
+// decoder
+        Charset charset = Charset.forName("UTF-8");
+        CharsetDecoder decoder = charset.newDecoder();
+		
+		SocketChannel connection = (SocketChannel) selectionKey.channel();
+
+		int bufferCapacity = 3;
+		ByteBuffer byteBuffer = ByteBuffer.allocate(bufferCapacity);
+		CharBuffer charBuffer = CharBuffer.allocate(bufferCapacity);
+
+		int readNum = connection.read(byteBuffer);
+		while(readNum> 0){
+			byteBuffer.flip();
+//          decoder.decode(byteBuffer,charBuffer,readNum<bufferCapacity);// 这时候，msgBuf的position会被设置为： msgBuf的原来的position+能被decode到的byte的长度(可能有的byge不能够decode，此时 msgBuf的position就不会等于msgBuf的limit)
+			decoder.decode(byteBuffer,charBuffer,true);// 这时候，msgBuf的position会被设置为： msgBuf的原来的position+能被decode到的byte的长度(可能有的byge不能够decode，此时 msgBuf的position就不会等于msgBuf的limit)
+			charBuffer.flip();
+			System.out.print(charBuffer.toString());
+
+			// 将没有解码的数据，存起来;
+			int notReadCount = byteBuffer.remaining();
+			byte[] notReadByte = null;
+			if(notReadCount>0){
+				notReadByte = new byte[notReadCount];
+				byteBuffer.get(notReadByte);
+			}
+
+			byteBuffer.clear();
+			charBuffer.clear();
+
+			//如果有多余的字节没有被处理，应该放进来，以便下一次被处理
+			if(notReadByte!=null){
+				byteBuffer.put(notReadByte);
+			}
+			readNum = connection.read(byteBuffer);
+		}
+
+```

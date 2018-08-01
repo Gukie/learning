@@ -30,6 +30,7 @@ public class NioClient {
             channel.write(ByteBuffer.wrap(msg.getBytes("utf-8")));
             Thread.sleep(50);
         }
+        Thread.sleep(Integer.MAX_VALUE);
     }
 
     private static String generateMsg(int currentTime) {

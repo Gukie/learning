@@ -11,6 +11,7 @@
     <modules>
         <module>spring-learning</module>
         <module>java-nio-learning</module>
+        <module>java-learning</module>
     </modules>
 
     <properties>

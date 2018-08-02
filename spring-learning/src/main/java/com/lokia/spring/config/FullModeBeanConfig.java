@@ -1,7 +1,7 @@
 package com.lokia.spring.config;
 
-import com.lokia.spring.beans.SingletonBean;
 import com.lokia.spring.beans.TestBean1;
+import com.lokia.spring.beans.SingletonBean;
 import com.lokia.spring.beans.TestBean2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.context.annotation.Bean;

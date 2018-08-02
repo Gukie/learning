@@ -2,11 +2,11 @@ package com.lokia.spring.main;
 
 import com.lokia.spring.beanorder.BeanOrderTestService;
 import com.lokia.spring.beans.TestBean1;
-import com.lokia.spring.beans.subparent.SubBean;
 import com.lokia.spring.factory.FactoryBean1;
 import com.lokia.spring.service.BeanAnnotationTestService;
-import com.lokia.spring.service.SubParentServiceTest;
 import com.lokia.spring.service.beaninterface.BeanAnnotationInterfaceServiceTest;
+import com.lokia.spring.beans.subparent.SubBean;
+import com.lokia.spring.service.SubParentServiceTest;
 import com.lokia.spring.service.methodinjection.ApplicationContextMIServiceTest;
 import com.lokia.spring.service.methodinjection.CglibLookupMIServiceTest;
 import com.lokia.spring.service.methodinjection.replace.ReplacementMIServiceTest;

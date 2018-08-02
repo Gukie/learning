@@ -1,5 +1,6 @@
 package com.lokia.spring.processor;
 
+import com.lokia.spring.beans.subparent.SubBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class CustomBeanPostProcessor implements BeanPostProcessor{
 
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 
-        if(bean instanceof  com.lokia.spring.beans.subparent.SubBean){
+        if(bean instanceof SubBean){
             System.out.println("after initialization bean:"+beanName);
         }
         return bean;

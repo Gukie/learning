@@ -1,7 +1,7 @@
 package com.lokia.spring.webmvc;
 
-import com.lokia.spring.webmvc.config.DispatcherServletConfig;
 import com.lokia.spring.webmvc.config.RootAppConfig;
+import com.lokia.spring.webmvc.config.DispatcherServletConfig;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;

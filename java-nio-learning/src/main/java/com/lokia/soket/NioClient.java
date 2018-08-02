@@ -1,10 +1,16 @@
 package com.lokia.soket;
 
+import com.lokia.soket.client.NioClientReader;
+import com.lokia.soket.client.NioClientWriter;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 
 /**
  * @author gushu
@@ -12,37 +18,26 @@ import java.nio.channels.SocketChannel;
  */
 public class NioClient {
 
-    private static  String baseMsg = " 客户端 打招呼 ";
+    private static int writeLoops = 5;
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
         InetSocketAddress socketAddress = new InetSocketAddress("localhost", 8888);
         SocketChannel channel = SocketChannel.open(socketAddress);
 
-//        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        for(int i = 0;i<5;i++){
-//            channel.read(byteBuffer);
-//            String receivedMsg = new String(byteBuffer.array());
-//            System.out.print(receivedMsg);
-//            byteBuffer.clear();
-
-            String msg = generateMsg(i);
-            channel.write(ByteBuffer.wrap(msg.getBytes("utf-8")));
-            Thread.sleep(50);
-        }
-        Thread.sleep(Integer.MAX_VALUE);
+        writeMsg2Server(channel);
+//        readMsgFromServer(channel);
+        Thread.sleep(60*24*60*1000);
     }
 
-    private static String generateMsg(int currentTime) {
-        StringBuilder result = new StringBuilder();
+    private static void readMsgFromServer(SocketChannel channel) throws IOException {
+        Thread reader = new Thread(new NioClientReader(channel));
+        reader.start();
+    }
 
-        int loop = currentTime+1;
-        for(int i = 0;i< loop;i++){
-            result.append(baseMsg);
-        }
-
-        return result.toString();
-
+    private static void writeMsg2Server(SocketChannel channel) throws IOException, InterruptedException {
+       Thread writer = new Thread(new NioClientWriter(channel,writeLoops));
+       writer.start();
     }
 
 }

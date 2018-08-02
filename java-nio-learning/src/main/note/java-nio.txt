@@ -1,6 +1,77 @@
 ## refer
 - https://examples.javacodegeeks.com/core-java/nio/java-nio-tutorial-beginners/ (基本概念)
 
+
+## 服务器端 vs 客户端
+### 各个OP的值
+- OP_READ, 1, 001
+- OP_WRITE, 4, 100
+- OP_CONNECT,8,1000
+- OP_ACCEPT,16,10000
+### 服务器端
+
+1. 由于可能需要处理多个连接，所以需要一个选择器，即一个selector
+2. 创建一个 ServerSocketChannel，并将其注册到 selector中，并会返回一个SelectionKey
+   ServerSocketChannel，它只能用于ACCEPT 来自客户端的连接，因为其 validOps()是16，所以其interestOps也只能是16，所有改变其interestOps的行为，都将会被拒绝
+3. 使用 selector.select() 监听 客户端过来的连接， 该方法会一直阻塞，直到有连接过来
+	当有连接过来是，创建一个新的 SocketChannel，并注册到 selector中去; 下次遍历时，就会将该SocketChannel上的事件给处理出来;
+	需要注意的是，新的 SocketChannel的 validOps的值为13，即: 1101； 所以只能注册 READ，Write，CONNECT，不能注册ACCEPT
+	
+
+#### 关于SelectionKey
+
+但有新的 IO事件发生时， selector.select()将返回， 然后调用 selector.selectedKeys() 获取到可用的 selectionKey，最后遍历每一个 SelectionKey进行处理
+注意，每当处理完一个 selectionKey之后，一般都会将其remove掉； 因为在selector.select()这个过程中，会做：
+	1. 如果该 key对应的operation在操作系统层面是ready了的
+		1.1. 而该key不在 selected-key set中，那么该key会被加到 selected-key set中； 同时 该key会加入到ready-key set中，旧的ready-key 中的ready信息将会被丢弃
+		1.2. 如果该 key不在selected-key set中，那么该key所在的channel的 ready-key set将会被修改让 该key对应的operation是true的，比如 isWritable,isReadable; 但其旧的read-key中的ready信息将会保留
+			> the channel's key is already in the selected-key set, so its ready-operation set is modified to identify any new operations for which the channel is reported to be ready
+
+	2. isXXXable的方法，都是需要用到readyOps()，而readOps()有跟上一步的selector.select()密切相关; 所以都是在 selector.select()之后再对每一个SelectionKey进行check 某个operation是否可用，比如是否可读(isReadable);
+	   一般都是这么像以下那么写的，比如 isAcceptable
+```
+ public final boolean isAcceptable() {
+	return (readyOps() & OP_ACCEPT) != 0;
+}
+```
+			
+	3. 一般处理SelectionKey的写法如下(也是服务器Socket对收到的IO进行处理的方式)
+```
+		while (true) {
+            
+            selector.select();
+
+            Set<SelectionKey> selectionKeySet = selector.selectedKeys();           
+            Iterator<SelectionKey> iterator = selectionKeySet.iterator();
+            while (iterator.hasNext()) {
+                SelectionKey selectionKey = iterator.next();
+                // ready to accept new Connection
+                if (selectionKey.isAcceptable()) {
+                    ...
+                }
+
+                if (selectionKey.isReadable()) {
+                   ...
+                }
+                if (selectionKey.isWritable()) {
+                   ...
+                }
+                iterator.remove();//即使remove掉了，下次selector.select()的时候，当前的 SelectionKey如果还在的化，还是会加进来，继续处理; 所以不用担心它会丢失掉
+            }
+
+
+        }
+```
+
+### 客户端
+由于客户端，不需要多路复用，所以不需要使用Selector，直接创建一个 SocketChannel，就可以直接用了，简单的示例如下:
+```
+  InetSocketAddress socketAddress = new InetSocketAddress("localhost", 8888);
+  SocketChannel channel = SocketChannel.open(socketAddress);
+  channel.write(ByteBuffer.wrap("hello world".getBytes("utf-8")));
+```
+
+
 ## ByteBuffer 处理中文乱码
 从Channel读取数据的时候，是从channel中取 byteBuffer能接收的字节数，即: remaining() 数量
 这就很可能会将中文截取错误;
@@ -49,3 +120,91 @@
 		}
 
 ```
+
+### Selector.select() method
+该方法，会阻塞，直到有一个Channel可以进行I/O了; 注意，serverChannel，是不参与计算的
+即： 如果客户端的 Channel不ready了，那么 selector.select() 会一直阻塞
+
+以下两端code，前一个是 selector.select(100), 后一个是 selector.select()；
+执行的结果，会发现前置在达到100ms的时候，会往下执行； 而后者会一直阻塞直到有客户端的channel进行IO了
+
+```
+		while(true){
+            System.out.println("*********************** start Selector.select() selecting...");
+            // 4. Selector.select() to wait until there is Channel ready for I/O
+            selector.select(100);
+
+            Set<SelectionKey> selectionKeySet = selector.selectedKeys();
+            if(selectionKeySet == null || selectionKeySet.isEmpty()){
+                System.out.println("***** selectionKeySet is empty...");
+            }
+            Iterator<SelectionKey> iterator = selectionKeySet.iterator();
+            while(iterator.hasNext()){
+                SelectionKey selectionKey = iterator.next();
+                // ready to accept new Connection
+                if(selectionKey.isAcceptable()){
+                    System.out.println("ready for accept new connection...");
+                    SocketChannel newConn = serverSocketChannel.accept();
+                    if(newConn == null){
+                        continue;
+                    }
+                    newConn.configureBlocking(false);
+                    SelectionKey newSK = newConn.register(selector,SelectionKey.OP_READ);
+                    printSelectionkey("accept new connection: ",newSK);
+
+                }else if(selectionKey.isReadable()){
+                    System.out.println("ready for read...");
+					...                  
+
+                }else if(selectionKey.isWritable()){
+                    System.out.println("ready for writing...");
+					...
+                }
+
+            }
+
+
+        }
+			
+```
+```
+		while(true){
+            System.out.println("*********************** start Selector.select() selecting...");
+            // 4. Selector.select() to wait until there is Channel ready for I/O
+            selector.select();
+
+            Set<SelectionKey> selectionKeySet = selector.selectedKeys();
+            if(selectionKeySet == null || selectionKeySet.isEmpty()){
+                System.out.println("***** selectionKeySet is empty...");
+            }
+            Iterator<SelectionKey> iterator = selectionKeySet.iterator();
+            while(iterator.hasNext()){
+                SelectionKey selectionKey = iterator.next();
+                // ready to accept new Connection
+                if(selectionKey.isAcceptable()){
+                    System.out.println("ready for accept new connection...");
+                    SocketChannel newConn = serverSocketChannel.accept();
+                    if(newConn == null){
+                        continue;
+                    }
+                    newConn.configureBlocking(false);
+                    SelectionKey newSK = newConn.register(selector,SelectionKey.OP_READ);
+                    printSelectionkey("accept new connection: ",newSK);
+
+                }else if(selectionKey.isReadable()){
+                    System.out.println("ready for read...");
+					...                  
+
+                }else if(selectionKey.isWritable()){
+                    System.out.println("ready for writing...");
+					...
+                }
+
+            }
+
+
+        }
+```
+
+
+### BIO, NIO, AIO

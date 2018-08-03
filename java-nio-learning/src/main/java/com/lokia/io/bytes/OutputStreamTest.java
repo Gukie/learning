@@ -8,8 +8,8 @@ public class OutputStreamTest {
 
     public static void main(String[] args) {
 
-
-        File file = IoUtils.getFile(IoUtils.IO_FILE_DIR,IoUtils.IO_FILE_NAME);
+        String fileDir =  IoUtils.getIoFileDir();
+        File file = IoUtils.getFile(fileDir,IoUtils.IO_FILE_NAME);
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(file);
 
@@ -17,7 +17,6 @@ public class OutputStreamTest {
                 String message = generateMsg(i);
                 fileOutputStream.write(message.getBytes("UTF-8"));
             }
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -25,7 +24,6 @@ public class OutputStreamTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private static String generateMsg(int currentLoop) {

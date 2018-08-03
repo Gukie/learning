@@ -1,0 +1,31 @@
+## refer
+- https://en.wikipedia.org/wiki/File_descriptor
+- https://blog.csdn.net/cywosp/article/details/38965239
+
+## 文件描述符 是什么？
+文件描述符是，在Unix及其相关的系统中， 内核为了高效管理 已被打开的文件和其他IO资源(比如socket)而建立的索引; 
+它的值是一个非负整数，系统中所有的IO操作，都是通过它来进行的
+
+0,1,2，这三个，是特殊的文件描述符
+0： 标准输入
+1： 标准输出
+2： 标准错误
+
+
+## File-Descriptor,  File-Table， INODE-Table的关系
+- file-descriptor, 每个进程都有一个表，用于维护自己的文件描述符
+- file-talbe, 系统层面上，所有的进程的文件描述符，形成一个 file-table, 该表中除了一些基本信息，还记录了 文件在inode-table的地址，以及文件访问模式(只读，只写还是读写模式)
+- INODE-Table，维护的就是系统真正的IO资源了(文件或者socket)
+
+## file-descriptor的限制(系统级别，进程级别)
+当打开太多文件的时候，系统会报 "Too many open files";
+这是因为，文件描述符是系统的一个重要资源，能打开多少，系统是有限制的；
+系统级别的限制，可通过以下命令查看到(即系统最多可以打开多少IO资源)
+```
+sysctl -a |grep fs.file-max
+```
+
+每个进程能打开多少IO资源，也是有限制的，具体的可以通过以下命令查看到
+```
+ulimit -u
+```

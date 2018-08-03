@@ -3,36 +3,25 @@ package com.lokia.io.bytes;
 import com.lokia.io.IoUtils;
 
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
 
 public class OutputStreamTest {
 
     public static void main(String[] args) {
 
-        String fileDir =  IoUtils.getIoFileDir();
-        File file = IoUtils.getFile(fileDir,IoUtils.IO_FILE_NAME);
+        int loops = 5;
+        CountDownLatch countDownLatch = new CountDownLatch(loops);
+        for(int i =0;i<loops;i++){
+            Thread thread = new Thread(new OutputStreamThread(countDownLatch),"output-stream-thread"+(i+1));
+            thread.start();
+        }
         try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-
-            for(int i =0;i < 5;i++){
-                String message = generateMsg(i);
-                fileOutputStream.write(message.getBytes("UTF-8"));
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("finished output stream test...");
+
+
     }
-
-    private static String generateMsg(int currentLoop) {
-
-        StringBuilder result = new StringBuilder();
-
-        result.append("你好, this is from Mars, you are the "+currentLoop+" one\n");
-        return result.toString();
-    }
-
-
 }

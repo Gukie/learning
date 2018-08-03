@@ -9,12 +9,18 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 public class IoUtils {
 
     private final static String NON_WINDOWS_IO_FILE_DIR = "/Users/lokia.gu/data/tmp";
     private final static String WINDOWS_IO_FILE_DIR = "D:\\tmp";
     public final static String IO_FILE_NAME = "io_tmp.txt";
+
+
+    public final static String[] OUT_MSG_LST = {"杭州", "西安", "上海"};
+    public static CountDownLatch COUNT_DOWN_LATCH = new CountDownLatch(OUT_MSG_LST.length);
+//    public final static  Object WRITER_LOCK = new Object();
 
     public static String getIoFileDir(){
 

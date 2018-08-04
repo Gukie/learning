@@ -40,6 +40,7 @@ public class IOWriteThread implements Runnable {
 
             String message = generateMsg();
             System.out.print(message);
+            // 这里的write，有几个步骤，涉及到原子操作，在实现的时候用了锁; 但write本身可以不用锁，是互斥的
             bufferedWriter.write(message);
 //            bufferedWriter.flush();
 

@@ -28,6 +28,7 @@ public class OutputStreamThread implements Runnable {
 
             for (int i = 0; i < 5; i++) {
                 String message = generateMsg(i);
+                // 直接调用的是底层OS的write方法，是线程安全的，所以在实现的时候可以不用锁
                 fileOutputStream.write(message.getBytes("UTF-8"));
             }
             fileOutputStream.write("\n".getBytes("UTF-8"));

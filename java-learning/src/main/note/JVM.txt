@@ -1,0 +1,49 @@
+## refer
+- http://www.cnblogs.com/redcreen/archive/2011/05/04/2037057.html
+- http://www.cnblogs.com/redcreen/archive/2011/05/05/2038331.html
+- https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#BehavioralOptions(官网)
+- https://docs.oracle.com/javase/8/docs/technotes/tools/windows/java.html#BABFAFAE ( 官网, 1.8 , 更准确)
+- http://jvmmemory.com/( 不同版本的 JVM参数的名字 示例)
+
+
+### 可创建的最大线程数
+
+可创建的最大线程数，一般跟两个地方有关系：
+1. 跟系统配置有关
+2. 跟JVM中的参数设置有关
+
+##### 1.系统配置
+其中 系统配置的化，跟一个进程可创建出来的线程数有关，这个可以通过
+```
+ /proc/sys/kernel/threads-max 
+```
+或者通过
+```
+ulimit -u
+```
+中查看
+
+
+##### JVM中的参数设置
+
+1. 一般地，操作系统给每一个进程分配的内存，是有限制的
+2. 一个Java线程的创建，同时会有一个对应的操作系统的物理线程的创建; 物理线程，是JVM之外的内存，如果不够了，会报
+```
+Exception in thread "main" java.lang.OutOfMemoryError: unable to create new native thread
+    at java.lang.Thread.start0(Native Method)
+    at java.lang.Thread.start(Thread.java:597)
+```
+
+
+
+所以，最大线程数
+```
+maxThreadNum = (操作系统给进程的最大内存 - JVM使用的内存 - 系统预留出来的内存) / (每个线程占用的内存大小)
+```
+
+每个线程占用的内存大小： 可通过 JVM 参数 -Xss 设置
+JVM使用的内存： 主要指JVM中堆内存的大小，一般通过 -Xms -Xmx进行设置
+系统预留出来的内存： 这个不同操作系统会有不同
+操作系统给进程的最大内存： 一般为2G
+
+

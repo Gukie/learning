@@ -1,0 +1,51 @@
+### 
+
+1. 创建
+	一般可以通过 Executors 这个工厂类创建线程池
+	Executors.newFixedThreadPool()
+	Executors.newSingleThreadExecutor()
+	Executors.newCachedThreadPool()
+	
+	他们的本质，都是创建 ThreadPoolExecutor
+
+2. ThreadPoolExecutor 参数与 简介
+ThreadPoolExecutor 实现的接口，是 ExecutorService， executor; 它编译方便的管理 thread或者里面的task的生命周期
+
+
+- ThreadPoolExecutor的主要参数：
+1. corePoolSize
+2. maxPoolSize
+3. workQueue (用于缓冲任务)
+
+
+当一个新的task(Runnable or Callable)过来时：
+1. 当前的线程数量，小于 corePoolSize，直接创建一个新的线程(即worker); 即使池子中有处于idle状态的线程，也会创建新的线程出来
+2. 当前的线程数量，大于 corePoolSize
+	2.1. 如果 workQueue没有满，那么当前任务会进入到 workQueue中
+	2.2. 如果 workQueue满了
+		2.2.1. 如果当前的线程数量， 小于 maxPoolSize, 创建新的线程, 处理该任务(这里，新的任务会被立马被处理; 而不是从workQueue中获取旧的数据)
+		2.2.2. 如果当前的线程数量，大于 maxPoolSize，那么会直接reject掉(这就需要看 定义的RejectedExecutionHandler了)
+		
+需要注意的是，在worker线程中，它会一直从队列中获取task，进行处理;从 worker的run方法可以看出：
+```
+Runnable task = w.firstTask; // 当前 worker的task; 所以如果新建worker的时候，带了一个task，那么会优先处理自己的; 没有的时候，才会通过 getTask() 获取新的任务
+while (task != null || (task = getTask()) != null){
+	....
+}
+
+```
+
+
+
+3. RejectedExecutionHandler
+- CallerRunsPolicy (直接在 调用方所在的线程中执行 task的run方法; 谁调用，就在谁所在的线程中之下你给，不新建线程了)
+```
+ public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            if (!e.isShutdown()) {
+                r.run();
+            }
+        }
+```
+- AbortPolicy (直接 跑出异常)
+- DiscardPolicy (直接丢弃当前任务)
+- DiscardOldestPolicy (丢弃队列里面存在时间最久的)

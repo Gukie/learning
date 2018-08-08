@@ -75,7 +75,7 @@ public class IOWriteThread implements Runnable {
         StringBuilder result = new StringBuilder(currentThreadName);
 
         int index = (int) (Math.random() * 1000) % IoUtils.OUT_MSG_LST.length;
-        return result.append(IoUtils.OUT_MSG_LST[index]).append("\n").toString();
+        return result.append(IoUtils.OUT_MSG_LST[index]).append("-").append(System.currentTimeMillis()).append("\n").toString();
     }
 }
 

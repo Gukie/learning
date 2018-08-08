@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>java-learning</artifactId>
+    <artifactId>common</artifactId>
     <build>
         <plugins>
             <plugin>
@@ -22,15 +22,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.lokia</groupId>
-            <artifactId>java-nio-learning</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-    </dependencies>
 
 
 </project>

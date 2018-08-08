@@ -42,6 +42,8 @@ public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
     @Override
     public void terminated() {
         super.terminated();
+        String threadName = Thread.currentThread().getName();
+        System.out.println("thread pool executor calculated, " + threadName + ", terminated.");
     }
 
 

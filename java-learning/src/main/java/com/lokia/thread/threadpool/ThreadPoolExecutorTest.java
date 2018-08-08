@@ -22,7 +22,7 @@ public class ThreadPoolExecutorTest {
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.DiscardOldestPolicy();
 
 
-        CustomThreadPoolExecutor customThreadPoolExecutor = new CustomThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime, TimeUnit.MILLISECONDS,blockingQueue,threadFactory,rejectedExecutionHandler);;
+        CustomThreadPoolExecutor customThreadPoolExecutor = new CustomThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime, TimeUnit.SECONDS,blockingQueue,threadFactory,rejectedExecutionHandler);;
 
 //        List<FutureTask<Void>> taskList = new ArrayList<>();
         for(int i = 0;i< thread_number;i++){
@@ -36,6 +36,10 @@ public class ThreadPoolExecutorTest {
             System.out.println("normally exit");
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }finally {
+            System.out.println("threadPoolExecutor isShutDown:"+customThreadPoolExecutor.isShutdown());
+            System.out.println("threadPoolExecutor isTerminated:"+customThreadPoolExecutor.isTerminated());
+            System.out.println("threadPoolExecutor isTerminating:"+customThreadPoolExecutor.isTerminating());
         }
     }
 

@@ -1,4 +1,4 @@
-package com.lokia.io;
+package com.lokia;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -90,7 +91,7 @@ public class IoUtils {
         Path filePath = Paths.get(dir, fileName);
         if (!Files.exists(filePath)) {
             try {
-                FileAttribute fileAttribute = generateFileAttrIfNeeded();
+                FileAttribute fileAttribute = generateFileAttr4Unix();
                 // create file
                 if (fileAttribute != null) {
                     Files.createFile(filePath, fileAttribute);
@@ -111,24 +112,23 @@ public class IoUtils {
 //        dirOne.setWritable(true);
     }
 
-    private static boolean isDir(File file) {
+    public static boolean isDir(File file) {
         String fileName1 = file.getName();
         int dotIndex = fileName1.lastIndexOf(".");
-        boolean isDir = false; //由于 file.isDirectory在文件不存在的时候返回false，需要自己手动做
+        boolean isDir = true; //由于 file.isDirectory在文件不存在的时候返回false，需要自己手动做
         if (dotIndex != -1) {
             String suffix = fileName1.substring(dotIndex);
-            if (!SUPPORTED_FILE_SUFFIX_SET.contains(suffix)) {
-                isDir = true;
+            if (SUPPORTED_FILE_SUFFIX_SET.contains(suffix)) {
+                isDir = false;
             }
         }
 
         return isDir;
     }
 
-    private static FileAttribute generateFileAttrIfNeeded() {
+    public static FileAttribute generateFileAttr4Unix() {
         if (!isWindowsOS()) {
-            Set<PosixFilePermission> filePermissionSet = PosixFilePermissions.fromString("rwxrwxrwx");
-            return PosixFilePermissions.asFileAttribute(filePermissionSet);
+            return PosixFilePermissions.asFileAttribute(EnumSet.allOf(PosixFilePermission.class));
         }
         return null;
     }

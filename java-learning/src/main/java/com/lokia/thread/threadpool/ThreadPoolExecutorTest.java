@@ -13,7 +13,7 @@ public class ThreadPoolExecutorTest {
 
     public static void main(String[] args) {
 
-        System.out.println("main thread name: "+Thread.currentThread().getName());
+        System.out.println("available cpu: "+Runtime.getRuntime().availableProcessors());
         System.out.println();
 
 

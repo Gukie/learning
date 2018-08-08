@@ -1,5 +1,7 @@
 package com.lokia.thread.threadpool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 /**
  * @author gushu
@@ -7,6 +9,7 @@ import java.util.concurrent.*;
  */
 public class ThreadPoolExecutorTest {
 
+    private static int thread_number = 10;
 
     public static void main(String[] args) {
 
@@ -20,7 +23,12 @@ public class ThreadPoolExecutorTest {
 
 
         CustomThreadPoolExecutor customThreadPoolExecutor = new CustomThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime, TimeUnit.MILLISECONDS,blockingQueue,threadFactory,rejectedExecutionHandler);;
-        customThreadPoolExecutor.submit(new FileCreateAndMsgWriteTask());
+
+//        List<FutureTask<Void>> taskList = new ArrayList<>();
+        for(int i = 0;i< thread_number;i++){
+            FutureTask<Void> task = new FutureTask<Void>(new FileCreateAndMsgWriteTask());
+            customThreadPoolExecutor.submit(task);
+        }
 
         try {
             customThreadPoolExecutor.awaitTermination(6,TimeUnit.SECONDS);

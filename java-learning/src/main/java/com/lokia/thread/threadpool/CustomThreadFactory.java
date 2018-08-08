@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class CustomThreadFactory implements ThreadFactory {
 
-    AtomicInteger threadCount = new AtomicInteger(1);
+    AtomicInteger threadCount = new AtomicInteger(0);
 
     public Thread newThread(Runnable r) {
         Thread thread = new Thread(r, "lokia-thread-" + threadCount.addAndGet(1));

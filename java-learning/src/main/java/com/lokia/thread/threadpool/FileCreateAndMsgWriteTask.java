@@ -1,41 +1,46 @@
 package com.lokia.thread.threadpool;
 
-import javax.security.auth.callback.Callback;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 创建文件，然后写点信息
+ *
  * @author gushu
  * @data 2018/8/8
  */
 public class FileCreateAndMsgWriteTask implements Callable<Void> {
 
 
-    private String dir = "D:\\tmp\\thread-pool";
+    private String dir = "D:\\tmp\\thread-pool\\ggg";
     private String filePrefix = "threadpool-";
+    private String fileSuffix = ".txt";
+
     private Random random = new Random();
-    private AtomicInteger fileNum = new AtomicInteger(1);
+    private AtomicInteger fileNum = new AtomicInteger(0);
 
     @Override
     public Void call() {
-        int loops = (int) (random.nextDouble()* 10000);
-        System.out.println("loop:"+loops);
+        int loops = (int) (random.nextDouble() * 5);
+        System.out.println("loop:" + loops);
         // open dir
-        openFileChannel(dir);
-        for(int i = 0;i < loops ;i++){
+        openFileChannel4Write(dir);
+        for (int i = 0; i < loops; i++) {
 
             int currentFileNo = fileNum.addAndGet(1);
-            String fileName = filePrefix + currentFileNo;
-            FileChannel fileChannel = openFileChannel(dir,fileName);
+            String fileName = filePrefix + currentFileNo + fileSuffix;
+            FileChannel fileChannel = openFileChannel4Write(dir, fileName);
 
 
             String currentMsg = generateMsg(currentFileNo);
@@ -46,8 +51,8 @@ public class FileCreateAndMsgWriteTask implements Callable<Void> {
 //                fileChannel.truncate()
             } catch (IOException e) {
                 e.printStackTrace();
-            }finally {
-                if(fileChannel != null){
+            } finally {
+                if (fileChannel != null) {
                     try {
                         fileChannel.force(true);
                         fileChannel.close();
@@ -61,18 +66,50 @@ public class FileCreateAndMsgWriteTask implements Callable<Void> {
         return null;
     }
 
-    private FileChannel  openFileChannel(String first, String ... others) {
-        Path fileDir = Paths.get(first,others);
+    private FileChannel openFileChannel4Write(String first, String... others) {
+        Path fileDir = Paths.get(first, others);
+
+        boolean isDir = isDirectoryFile(fileDir);
+        if(isDir){
+            if (!Files.exists(fileDir)) {
+                try {
+                    Files.createDirectories(fileDir);
+//                else {
+//                    Files.createFile(fileDir);
+//                }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+
         try {
-            return FileChannel.open(fileDir, EnumSet.of(StandardOpenOption.CREATE,StandardOpenOption.READ,StandardOpenOption.WRITE,StandardOpenOption.APPEND));
-//            return FileChannel.open(fileDir);
+//            if(isDir){
+//                return FileChannel.open(fileDir);
+//            }
+            // 这里需要 fileDir所在的目录存在
+            return FileChannel.open(fileDir, EnumSet.of(StandardOpenOption.CREATE,StandardOpenOption.WRITE));
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
+    private boolean isDirectoryFile(Path fileDir) {
+        String fileName = fileDir.toFile().getName();
+        int dotIdx = fileName.indexOf(".");
+        if(dotIdx == -1){
+           return true;
+       }
+        return false;
+    }
+
     private String generateMsg(int currentFileNo) {
-        return "你好，消息来自 北极, fileNo: "+currentFileNo;
+        String threadName = Thread.currentThread().getName();
+        return "你好，消息来自: "+threadName+", fileNo: " + currentFileNo;
     }
 }

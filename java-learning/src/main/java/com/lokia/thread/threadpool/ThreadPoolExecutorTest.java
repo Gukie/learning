@@ -9,9 +9,13 @@ import java.util.concurrent.*;
  */
 public class ThreadPoolExecutorTest {
 
-    private static int thread_number = 10;
+    private static int thread_number = 110;
 
     public static void main(String[] args) {
+
+        System.out.println("main thread name: "+Thread.currentThread().getName());
+        System.out.println();
+
 
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         int corePoolSize = availableProcessors+1;
@@ -31,15 +35,17 @@ public class ThreadPoolExecutorTest {
         }
 
         try {
-            customThreadPoolExecutor.awaitTermination(6,TimeUnit.SECONDS);
+            customThreadPoolExecutor.shutdown();
+            customThreadPoolExecutor.awaitTermination(2,TimeUnit.MINUTES); // before this invoke, the shutdown should be invoke, otherwise it will wait the timeout to terminate.
 //            customThreadPoolExecutor.awaitTermination()
             System.out.println("normally exit");
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }finally {
             System.out.println("threadPoolExecutor isShutDown:"+customThreadPoolExecutor.isShutdown());
             System.out.println("threadPoolExecutor isTerminated:"+customThreadPoolExecutor.isTerminated());
             System.out.println("threadPoolExecutor isTerminating:"+customThreadPoolExecutor.isTerminating());
+
         }
     }
 

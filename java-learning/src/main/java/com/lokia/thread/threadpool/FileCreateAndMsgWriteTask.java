@@ -33,7 +33,7 @@ public class FileCreateAndMsgWriteTask implements Callable<Void> {
 
     @Override
     public Void call() {
-        int loops = (int) (random.nextDouble() * 5);
+        int loops = (int) (random.nextDouble() * 1809);
         System.out.println("loop:" + loops);
         String dir = IoUtils.getIoFileDir();
         // open dir

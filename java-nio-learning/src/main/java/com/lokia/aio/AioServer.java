@@ -54,34 +54,42 @@ public class AioServer {
 
         Charset charset = Charset.forName("utf-8");
         CharsetDecoder decoder = charset.newDecoder();
+        ByteBuffer data = ByteBuffer.allocate(17);
+        CharBuffer charBuffer = CharBuffer.allocate(17);
         while (true) {
+            data.clear();
+            charBuffer.clear();
+
+            data.put(("\""+Thread.currentThread().getName()+"\"").getBytes());
             Future<AsynchronousSocketChannel> futureTask = serverSocketChannel.accept();
             AsynchronousSocketChannel socketChannel = futureTask.get();
-            ByteBuffer data = ByteBuffer.allocate(5);
-            CharBuffer charBuffer = CharBuffer.allocate(5);
-            if (socketChannel != null && socketChannel.isOpen()) {
-                Future<Integer> readNum = socketChannel.read(data);
+//            synchronized (socketChannel){
+//                ByteBuffer data = ByteBuffer.allocate(5);
+//                CharBuffer charBuffer = CharBuffer.allocate(5);
+                if (socketChannel != null && socketChannel.isOpen()) {
+                    Future<Integer> readNum = socketChannel.read(data);
 
-                while (readNum.get() > 0) {
-                    data.flip();
-                    decoder.decode(data, charBuffer, false);
-                    int remaining = data.remaining();
-                    byte[] remainingBytes = null;
-                    if (remaining > 0) {
-                        remainingBytes = new byte[remaining];
-                        data.get(remainingBytes);
-                    }
-                    charBuffer.flip();
-                    System.out.print(charBuffer.toString());
-                    data.clear();
-                    charBuffer.clear();
+                    while (readNum.get() > 0) {
+                        data.flip();
+                        decoder.decode(data, charBuffer, false);
+                        int remaining = data.remaining();
+                        byte[] remainingBytes = null;
+                        if (remaining > 0) {
+                            remainingBytes = new byte[remaining];
+                            data.get(remainingBytes);
+                        }
+                        charBuffer.flip();
+                        System.out.print(charBuffer.toString());
+                        data.clear();
+                        charBuffer.clear();
 
-                    if (remainingBytes != null) {
-                        data.put(remainingBytes);
+                        if (remainingBytes != null) {
+                            data.put(remainingBytes);
+                        }
+                        readNum = socketChannel.read(data);
                     }
-                    readNum = socketChannel.read(data);
                 }
-            }
+//            }
         }
     }
 }

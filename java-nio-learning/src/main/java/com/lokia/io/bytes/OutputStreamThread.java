@@ -1,6 +1,6 @@
 package com.lokia.io.bytes;
 
-import com.lokia.io.IoUtils;
+import com.lokia.IoUtils;
 
 import java.io.*;
 import java.util.concurrent.CountDownLatch;

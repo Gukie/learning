@@ -1,6 +1,7 @@
 package com.lokia.io.chars;
 
-import com.lokia.io.IoUtils;
+
+import com.lokia.IoUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;

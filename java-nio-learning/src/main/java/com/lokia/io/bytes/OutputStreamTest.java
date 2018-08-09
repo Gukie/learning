@@ -1,8 +1,6 @@
 package com.lokia.io.bytes;
 
-import com.lokia.io.IoUtils;
 
-import java.io.*;
 import java.util.concurrent.CountDownLatch;
 
 public class OutputStreamTest {

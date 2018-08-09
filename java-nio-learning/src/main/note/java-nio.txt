@@ -2,6 +2,12 @@
 - https://examples.javacodegeeks.com/core-java/nio/java-nio-tutorial-beginners/ (基本概念)
 
 
+## basic
+- connection, 一个连接，可以理解为一个 session;
+- socket, 连接的一个endpoint，即一个口子; 连接关闭了，socket不一定关闭了； socket关闭了，连接一定关闭了;
+- 一个socket，可以处理多个connection； 所以在AIO的server中，可以设置最大连接数
+
+
 ## 服务器端 vs 客户端
 ### 各个OP的值
 - OP_READ, 1, 001
@@ -205,6 +211,47 @@
 
         }
 ```
+
+### flush
+- https://www.ibm.com/developerworks/cn/linux/l-cn-directio/index.html (同步写机制，异步写机制，延迟写机制 以及 Buffered IO, Direct IO)
+- https://docs.intersystems.com/latest/csp/docbook/DocBook.UI.Page.cls?KEY=GCI_buffered (Buffered IO, Direct IO)
+- https://www.quora.com/In-C-what-does-buffering-I-O-or-buffered-I-O-mean (User Buffered IO)
+- https://www.safaribooksonline.com/library/view/linux-system-programming/0596009585/ch03.html (User Buffered IO)
+
+#### 同步写机制，异步写机制，延迟写机制
+同步写机制： 数据会立即写到磁盘中，应用程序会一直等，知道数据全部写入磁盘
+延迟写机制： 数据会写到 内核缓存(叶缓存，Page cache)完成后，应用程序就返回了(这种方式，数据可能没有正真的写入到磁盘)
+异步写机制： 跟延迟写不同的是，该方式在数据真正写入到磁盘后，会通知应用程序
+
+#### Buffered IO vs Direct IO
+- Buffered IO: 所有的 IO 读写都经过 内核缓存，这是默认的工作方式
+- UnBuffered IO: IO读写，直接跟磁盘打交道，绕过 Operation System Cache;
+
+
+#### User Buffered IO (中文名也叫 流缓存)
+这个层面的缓存，是用户层面的； 既可以通过应用程序显示的加上，也可以通过操作系统提供的类库隐式的加上
+
+Example:
+	每一次写的内容很少，比如一个字节，那么写10个字节：
+	没有使用user-buffered-IO: 每一次调用，都会调用操作系统内核的write()， 这样，调用10次系统 write() 方法
+	使用了user-buffered-IO： 假设设置的流缓存是5字节， 那么只会调用 write()两次
+
+注意：
+	用户缓存只缓存应用程序这一边的数据，控制调用 OS底层IO的次数; 并不能控制这次OS底层IO是否使用缓存，或者是否成功;
+
+Java中的IO
+- write的时候，如果使用了缓存，将数据写到自己的缓存中; 
+- flush的时候，将缓存中的数据写到磁盘中去(这里也只是调用操作系统的write方法);具体有没有真正写进去，不能保证，因为它采用的是延迟写机制; flush方法的注解如下：
+>If the intended destination of this stream is an abstraction provided by the underlying operating system, for example a file, then flushing the stream guarantees only that bytes previously written to the stream are passed to the operating system for writing; it does not guarantee that they are actually written to a physical device such as a disk drive
+- BufferedWriter/BufferedReader/BufferedOutputStream/BufferedInputStream 都是使用了缓存的(即流缓存), 所以在使用的时候，一般也建议使用它们; 其他的 Writer/Reader/OutputStream/InputStream 可能要看它们具体的实现，但大部分都没有使用缓存
+
+- 字节流的IO类 与 字符流的IO类的互转
+>- 字节流 转为 字符流： InputStreamReader (这个可以解决字节流输出时，中文乱码问题)
+>- 字符流 转为 字节流: OutputStreamWriter (写字符的时候，最后需要转为字节写到文件中)
+
+
+
+#### 多个线程，同时操作一个流/(字节或者字符的)Java IO在write
 
 
 ### BIO, NIO, AIO

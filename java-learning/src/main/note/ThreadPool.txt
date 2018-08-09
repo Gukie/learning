@@ -12,6 +12,8 @@
 2. ThreadPoolExecutor 参数与 简介
 ThreadPoolExecutor 实现的接口，是 ExecutorService， executor; 它编译方便的管理 thread或者里面的task的生命周期
 
+3. ThreadFactory
+该接口是 创建thread， 可以通过继承该类，实现自定义Thread，比如设置线程的名字，是否是是daemon等
 
 - ThreadPoolExecutor的主要参数：
 1. corePoolSize

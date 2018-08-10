@@ -255,3 +255,39 @@ Java中的IO
 
 
 ### BIO, NIO, AIO
+
+- refer
+>- https://www.jianshu.com/p/8ad464ed516e (讲的很详细，各个IO还有相应的图)
+>- https://juejin.im/entry/598da7d16fb9a03c42431ed3 (举得开水壶的例子还不错)
+
+1. BIO 是同步阻塞IO
+2. NIO 是同步非阻塞
+3. AIO 是异步非阻塞
+
+
+##### 一个IO过程
+1. 程序发出一个IO请求 (一个System call 命令)
+2. OS系统收到请求后，做两个步骤：
+	2.1. 准备数据 (waiting for the data to be ready)
+	2.2. 数据准备好后，将数据从内核copy到用户进程中 (copy data from kernel to user)
+3. OS都完成后，返回成功给用户进程，此时用户进程就可以处理数据了
+
+
+
+- 是否同步
+是看"数据从kernel copy到用户进程"这一步，进程是否阻塞; 如果阻塞，就是同步，如果不是，则是异步
+- 是否阻塞
+是看"waiting for data to be ready"这一步，进程是否阻塞;
+
+
+##### Summary
+BIO：全程都是阻塞的，所以是同步阻塞IO
+NIO: 
+	1. 数据准备阶段，是非阻塞的; 这个阶段，系统会通过 SelectionKey 去轮询数据是否ready了
+	2. 数据copy阶段，是同步的; 即channel的read/write操作，会一致阻塞，知道数据处理完成
+	3. 所以NIO是同步非阻塞IO	
+AIO：进程发送一个 system call之后，就可以处理其他的事情; 当 OS系统将数据准备好，并且copy到用户进程完成后，会通知用户进程;
+	全程都不会有阻塞，所以AIO是异步非阻塞IO
+
+
+

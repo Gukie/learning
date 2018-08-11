@@ -31,15 +31,41 @@ public class ThreadPoolExecutorTest {
 
         CustomThreadPoolExecutor customThreadPoolExecutor = new CustomThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime, TimeUnit.SECONDS,blockingQueue,threadFactory,rejectedExecutionHandler);;
 
+//        testNormal(customThreadPoolExecutor);
 //        testUncaughtException(customThreadPoolExecutor);
+        testInvokceAll(customThreadPoolExecutor);
+
+    }
+
+    private static void testInvokceAll(CustomThreadPoolExecutor customThreadPoolExecutor) {
+        List<Callable<Void>> taskList  = new ArrayList<>();
+        for(int i = 0;i< thread_number;i++){
+            taskList.add(new FileCreateAndMsgWriteTask());
+        }
+        try {
+           List<Future<Void>> resultList = customThreadPoolExecutor.invokeAll(taskList);
+           for(Future<Void> result: resultList){
+               System.out.println("isDone:"+result.isDone()+",isCancelled:"+result.isCancelled());
+           }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            shutdown(customThreadPoolExecutor);
+        }
+    }
+
+    private static void testNormal(CustomThreadPoolExecutor customThreadPoolExecutor) {
         for(int i = 0;i< thread_number;i++){
             FutureTask<Void> task = new FutureTask<>(new FileCreateAndMsgWriteTask());
             customThreadPoolExecutor.submit(task);
         }
+        shutdown(customThreadPoolExecutor);
+    }
 
+    private static void shutdown(CustomThreadPoolExecutor customThreadPoolExecutor) {
         try {
             customThreadPoolExecutor.shutdown();
-            customThreadPoolExecutor.awaitTermination(20,TimeUnit.MINUTES); // before this invoke, the shutdown should be invoke, otherwise it will wait the timeout to terminate.
+            customThreadPoolExecutor.awaitTermination(20, TimeUnit.MINUTES); // before this invoke, the shutdown should be invoke, otherwise it will wait the timeout to terminate.
 //            customThreadPoolExecutor.awaitTermination()
             System.out.println("normally exit");
         } catch (Exception e) {
@@ -48,7 +74,6 @@ public class ThreadPoolExecutorTest {
             System.out.println("threadPoolExecutor isShutDown:"+customThreadPoolExecutor.isShutdown());
             System.out.println("threadPoolExecutor isTerminated:"+customThreadPoolExecutor.isTerminated());
             System.out.println("threadPoolExecutor isTerminating:"+customThreadPoolExecutor.isTerminating());
-
         }
     }
 
@@ -78,6 +103,8 @@ public class ThreadPoolExecutorTest {
 //                e.printStackTrace();
 //            }
 //        }
+
+        shutdown(customThreadPoolExecutor);
     }
 
 

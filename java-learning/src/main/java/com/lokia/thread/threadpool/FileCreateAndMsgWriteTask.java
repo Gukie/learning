@@ -62,10 +62,12 @@ public class FileCreateAndMsgWriteTask implements Callable<Void> {
                         e.printStackTrace();
                     }
                 }
+//                throw new RuntimeException(" exception made to test Thread.UncaughtExceptionHandler.");
+
             }
         }
-
-        return null;
+        throw new RuntimeException(" exception made to test Thread.UncaughtExceptionHandler.");
+//        return null;
     }
 
 

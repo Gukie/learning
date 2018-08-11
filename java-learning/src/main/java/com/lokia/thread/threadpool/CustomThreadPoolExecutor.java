@@ -15,8 +15,7 @@ public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
     WorkerStartTimeThreadLocal startTimeThreadLocal = new WorkerStartTimeThreadLocal();
 
     public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler) {
-
-                super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, rejectedExecutionHandler);
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, rejectedExecutionHandler);
     }
 
 
@@ -37,6 +36,10 @@ public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         System.out.println("thread pool executor calculated, " + threadName + ", time consumed: " + (end - start));
 
         startTimeThreadLocal.remove();
+        if(t !=null){
+//            Thread.currentThread().un
+            System.err.println("********************** CustomThreadPoolExecutor afterExecute get UncaughtException, thread-name;"+Thread.currentThread().getName());
+        }
     }
 
     @Override

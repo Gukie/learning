@@ -1,0 +1,126 @@
+## 线程创建
+1. 线程分两种，普通线程和守护线程;
+2. JVM启动的时候，除了主线程外，其他的都是守护线程(比如垃圾回收器); 当创建一个线程时，新线程的 守护状态跟priority默认是会继承自 创建它的线程的(当然这些都可以修改的)
+创建线程的时候，会调用 Thread#init()方法，以下是该方法的一个snippet:
+```
+ Thread parent = currentThread();
+ ...
+ this.daemon = parent.isDaemon();
+ this.priority = parent.getPriority();
+```
+
+
+## 线程中发生异常
+如果一个线程中，发生了 RuntimeException，如果没有特殊处理的化，该线程将会退出; 可以通过两种方式对它进行处理
+
+1. 在线程的run方法中，进行try-catch-finally
+```
+public void run(){
+    try{
+    }catch(){
+
+    }finally{
+        // 对异常进行处理. 一般都只是将异常信息存入log中
+    }
+
+}
+```
+
+2. 自定义线程的 UncaughtExceptionHandler
+每个线程都有自己的UncaughtExceptionHandler; 但默认的是通过 默认的ThreadGroup创建的 UncaughtExceptionHandler, 它默认是将错误信息打印在控制台上
+ThreadGroup#uncaughtException
+```
+class ThreadGroup implements Thread.UncaughtExceptionHandler { // 由此可见ThreadGroup是实现了 Thread.UncaughtExceptionHandler的
+            ...
+        public void uncaughtException(Thread t, Throwable e) {
+                if (parent != null) {
+                    parent.uncaughtException(t, e);
+                } else {
+                    Thread.UncaughtExceptionHandler ueh =
+                        Thread.getDefaultUncaughtExceptionHandler();
+                    if (ueh != null) {
+                        ueh.uncaughtException(t, e);
+                    } else if (!(e instanceof ThreadDeath)) {
+                        System.err.print("Exception in thread \""
+                                         + t.getName() + "\" ");
+                        e.printStackTrace(System.err);
+                    }
+                }
+            }
+}
+```
+
+需要注意的是： 如果是通过线程池，希望可以在自定义的 ThreadFactory中，对线程设置UncaughtExceptionHandler，需要注意：
+1. 只能用 execute，不能用submit
+原因是： 线程池的submit，会将 runnable 进行封装，封装成 RunnableFuture(其实是一个FutureTask)，然后再调用 execute;
+AbstractExecutorService#submit:
+```
+    public Future<?> submit(Runnable task) {
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<Void> ftask = newTaskFor(task, null);
+        execute(ftask);
+        return ftask;
+    }
+```
+
+而 FutureTask 在run的时候，会将异常设置成为outcome，然后get的时候，将它组装成ExecutionException，这样当前线程就以为没有异常，就不会调用自定义的 UncaughtExceptionHandler
+```
+   public void run() {
+        if (state != NEW ||
+            !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                         null, Thread.currentThread()))
+            return;
+        try {
+            Callable<V> c = callable;
+            if (c != null && state == NEW) {
+                V result;
+                boolean ran;
+                try {
+                    result = c.call();
+                    ran = true;
+                } catch (Throwable ex) {
+                    result = null;
+                    ran = false;
+                    setException(ex);
+                }
+                if (ran)
+                    set(result);
+            }
+        } finally {
+            // runner must be non-null until state is settled to
+            // prevent concurrent calls to run()
+            runner = null;
+            // state must be re-read after nulling runner to prevent
+            // leaked interrupts
+            int s = state;
+            if (s >= INTERRUPTING)
+                handlePossibleCancellationInterrupt(s);
+        }
+    }
+
+
+
+    protected void setException(Throwable t) {
+        if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+            outcome = t;
+            UNSAFE.putOrderedInt(this, stateOffset, EXCEPTIONAL); // final state
+            finishCompletion();
+        }
+    }
+
+    public V get() throws InterruptedException, ExecutionException {
+        int s = state;
+        if (s <= COMPLETING)
+            s = awaitDone(false, 0L);
+        return report(s);
+    }
+
+    private V report(int s) throws ExecutionException {
+            Object x = outcome;
+            if (s == NORMAL)
+                return (V)x;
+            if (s >= CANCELLED)
+                throw new CancellationException();
+            throw new ExecutionException((Throwable)x);
+        }
+```

@@ -9,7 +9,7 @@ import java.util.concurrent.*;
  */
 public class ThreadPoolExecutorTest {
 
-    private static int thread_number = 110;
+    private static int thread_number = 5;
 
     public static void main(String[] args) {
 
@@ -28,15 +28,35 @@ public class ThreadPoolExecutorTest {
 
         CustomThreadPoolExecutor customThreadPoolExecutor = new CustomThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime, TimeUnit.SECONDS,blockingQueue,threadFactory,rejectedExecutionHandler);;
 
-//        List<FutureTask<Void>> taskList = new ArrayList<>();
+        List<FutureTask<Void>> taskList = new ArrayList<>();
         for(int i = 0;i< thread_number;i++){
-            FutureTask<Void> task = new FutureTask<Void>(new FileCreateAndMsgWriteTask());
-            customThreadPoolExecutor.submit(task);
+//            FutureTask<Void> task = new FutureTask<Void>(new FileCreateAndMsgWriteTask());
+//            customThreadPoolExecutor.submit(task);
+//            customThreadPoolExecutor.execute(task);
+
+//            taskList.add(task);
+
+
+            FutureTask<Void> task = new FutureTask<Void>(new UncaughtExceptionHandlerTestTask(),null);
+//            customThreadPoolExecutor.execute(new UncaughtExceptionHandlerTestTask());
+            customThreadPoolExecutor.submit(new UncaughtExceptionHandlerTestTask());
+
         }
+
+//        for(FutureTask<Void> task: taskList){
+//            try {
+//                Object resutl = task.get();
+//                System.out.println(resutl);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            }
+//        }
 
         try {
             customThreadPoolExecutor.shutdown();
-            customThreadPoolExecutor.awaitTermination(2,TimeUnit.MINUTES); // before this invoke, the shutdown should be invoke, otherwise it will wait the timeout to terminate.
+            customThreadPoolExecutor.awaitTermination(20,TimeUnit.MINUTES); // before this invoke, the shutdown should be invoke, otherwise it will wait the timeout to terminate.
 //            customThreadPoolExecutor.awaitTermination()
             System.out.println("normally exit");
         } catch (Exception e) {

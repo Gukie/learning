@@ -1,4 +1,4 @@
-package com.lokia.thread.threadpool;
+package com.lokia.thread.threadpool.task;
 
 import com.lokia.IoUtils;
 

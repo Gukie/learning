@@ -124,3 +124,16 @@ AbstractExecutorService#submit:
             throw new ExecutionException((Throwable)x);
         }
 ```
+
+### Advanced thread topic (JUC package)
+Lock 对应 synchronized
+何时用：
+    1. 需要对加锁机制进行自定义，比如
+        1.1. 加锁的时候，支持interrupt以相应interrupt；
+        1.2. tryLock可以在立马返回，true表示获取到了，false表示失败了
+        1.3. 比较灵活的控制锁
+        1.4. 但需要programmer手动维护，比较危险
+
+如何实现的：
+    ReentrantLock， ReentantReadWriteLock， Semaphore， CountDownLatch： CyclicBarrier
+    他们都是通过 AbstractQueuedSynchronizer 来实现的，一般都是在实现类中 定义一个 Sync extends AbstractQueuedSynchronizer

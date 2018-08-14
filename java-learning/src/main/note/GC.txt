@@ -2,3 +2,56 @@
 - https://www.cnblogs.com/ggjucheng/p/3977612.html （GC）
 - http://www.oracle.com/technetwork/tutorials/tutorials-1876574.html (G1 官网)
 - https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/cms.html （CMS 官网）
+
+## 222
+
+新生代的 GC collector (采用的算法，都是 复制算法)
+1。 Serial
+2。 ParNew
+3。 Parallel Scavenge （关注点在： 吞吐量=用户程序运行的时间/（用户程序运行的时间+GC 时间）   ）
+
+
+老年代的 GC Collector ()
+1。 Serial Old - 标记-整理算法
+2。 Parallel Old - 标记-整理算法
+3。 CMS -标记-清除算法，会有内存碎片，可以通过参数的设置对内存碎片进行整理
+
+
+集新生代与老年代一体的 GC Collector：
+1。 G1 （复制算法+ 标记-整理算法）
+
+
+他们的组合有：
+1。 Serial - Serial Old
+2。 ParNew - Serial Old
+3。 Parallel Scavenge - Serial Old
+4。 Parallel Scavenge - Parallel Old
+2。 ParNew - CMS
+
+
+### CMS vs G1 步骤
+
+CMS：采用的算法是： 标记-清除算法，会产生内存碎片； 而且由于 GC的同时，用户线程也在工作，这就有可能会出现用户进程在分配空间的时候，空间不够的情况
+这时候会报"concurrent mode failure"； 这时候会使用 CMS的备用方案 - Serial One，它会 "stop the whole world" 进行垃圾回收，这样整个垃圾回收的时长就增加了
+
+步骤如下
+1。 初始标记 - 标记 GR Root 能直达的对象 (这里话费的时间是很短的)
+2。 并行标记 - 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
+3。 重新标记- 标记那些在GC的同时，由于用户线程造成的标记的更改，再更正一下
+4。 并行清理
+
+
+G1：
+G1的内存的布局跟其他GC收集器不一样，它采用将内存划成一个一个独立的Region块
+G1回收的时候会跟踪各个Region的回收价值，回收价值= 回收的堆内存大小以及需要消耗的时间的一个比值，后台会维护一个列表，每次回收的时候会根据设定的回收时间，优先回收价值最大的Region，这也是 G1（Garbage-First的由来）
+如何避免全堆的扫描：
+    每个Region块都会维护一个自己的对象引用表，remember set；当对某个对象进行修改的时候，会对它引用到的对象进行分析，然后更新它所引用到的对象所在的Region的 进行remember set；
+    这样在回收的时候，只需要查看 Region的特定remember set，然后就可以知道需要回收哪些对象，而不用对全堆进行扫描了
+G1回收的步骤：
+1。 初始标记- 只标记GC root能直接达到的对象
+2。 并行标记- 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
+3。 最终标记 - 由于并行标记的时候，用户线程还在运行，会导致标记产生变动，这一部分需要记录，记作： remember set log； 然后将这一步的结果合并到 上一步产生的remember set中去
+4。 根据设定的参数，筛选回收
+
+
+CMS 跟 G1的 "初始标记"和"最终标记"/"重新标记" 都会 stop the world，但他们的时间不会太长

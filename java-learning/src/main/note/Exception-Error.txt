@@ -1,0 +1,29 @@
+
+Exception and Error 都是从 Throwable中继承过来的
+
+### Exception 分两种
+1. Checked Exception: 在 compiled time，就需要声明，要么 catch注，要么 在方法中throws
+2. Unchecked Exception： 只有在运行时才会发现的错误, 比如 RuntimeException及其子类，NullPointerException，IndexOutOfBoundsException
+
+Error: 只有在运行的过程中才会被发现的错误
+
+
+## total
+
+                   +-----------+
+		   | Throwable |
+                   +-----------+
+                    /         \
+		   /           \
+          +-------+          +-----------+
+          | Error |          | Exception |
+          +-------+          +-----------+
+	   /  |  \           / |        \
+         \________/	  \______/    	 \
+                                    +------------------+
+        unchecked	 checked	    | RuntimeException |
+                                    +------------------+
+                                     /   |    |      \
+                                     \_________________/
+
+                                         unchecked

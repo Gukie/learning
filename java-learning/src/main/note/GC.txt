@@ -1,0 +1,4 @@
+## refer
+- https://www.cnblogs.com/ggjucheng/p/3977612.html （GC）
+- http://www.oracle.com/technetwork/tutorials/tutorials-1876574.html (G1 官网)
+- https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/cms.html （CMS 官网）

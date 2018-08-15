@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class HeapMonitorTest {
 
-    static int loop = 40;
+    static int loop = 400;
 
     static int _1MB = 1024* 1024;
 
@@ -18,8 +18,8 @@ public class HeapMonitorTest {
         List<byte[]> byteList = new ArrayList<>();
 
         for(int i =0;i< loop;i++){
-            byteList.add(new byte[_1MB/4]);
-            Thread.sleep(1000);
+            byteList.add(new byte[_1MB*4]);
+            Thread.sleep(100);
         }
 
         System.out.println("finished...");

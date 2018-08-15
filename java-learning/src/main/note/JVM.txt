@@ -1,9 +1,12 @@
 ## refer
 - http://www.cnblogs.com/redcreen/archive/2011/05/04/2037057.html
 - http://www.cnblogs.com/redcreen/archive/2011/05/05/2038331.html
-- https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#BehavioralOptions(官网)
+- https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#BehavioralOptions(JVM的参数大全，官网, for JDK7 or earlier )
+-https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html (JVM的参数大全，官网, for JDK8)
+- https://plumbr.io/handbook/garbage-collection-algorithms-implementations (GC 参数 example)
 - https://docs.oracle.com/javase/8/docs/technotes/tools/windows/java.html#BABFAFAE ( 官网, 1.8 , 更准确)
 - http://jvmmemory.com/( 不同版本的 JVM参数的名字 示例)
+
 
 
 ### 可创建的最大线程数
@@ -47,3 +50,13 @@ JVM使用的内存： 主要指JVM中堆内存的大小，一般通过 -Xms -Xmx
 操作系统给进程的最大内存： 一般为2G
 
 
+### VM 参数
+-X 开头的参数，并不是所有的VM都支持，可能只是在特定的VM支持
+-XX 开头的参数不稳定
+
+Options that begin with -X are non-standard (not guaranteed to be supported on all VM implementations), and are subject to change without notice in subsequent releases of the JDK.
+Options that are specified with -XX are not stable and are subject to change without notice
+
+1. 对于Boolean类型的option： -XX:+<option>，表示开， -XX:-<option>表示关
+2. 对于Number类型的option：-XX:<option>=<number>，数字可以加上单位，比如 'm'或者'M'表示兆; 比如： -XX:MaxPermSize=64m
+3. 对于String类型的option：  -XX:<option>=<string>

@@ -2,6 +2,7 @@
 - https://www.cnblogs.com/ggjucheng/p/3977612.html （GC）
 - http://www.oracle.com/technetwork/tutorials/tutorials-1876574.html (G1 官网)
 - https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/cms.html （CMS 官网）
+- https://plumbr.io/handbook/garbage-collection-algorithms-implementations (GC 参数 example)
 
 ## 222
 
@@ -30,28 +31,132 @@
 
 
 ### CMS vs G1 步骤
+- https://plumbr.io/handbook/garbage-collection-algorithms-implementations#cms-minor-gc（讲的非常详细，包括GC log怎么读）
 
-CMS：采用的算法是： 标记-清除算法，会产生内存碎片； 而且由于 GC的同时，用户线程也在工作，这就有可能会出现用户进程在分配空间的时候，空间不够的情况
+CMS(Concurrent Mark and Swap)：采用的算法是： 标记-清除算法，会产生内存碎片； 而且由于 GC的同时，用户线程也在工作，这就有可能会出现用户进程在分配空间的时候，空间不够的情况
 这时候会报"concurrent mode failure"； 这时候会使用 CMS的备用方案 - Serial One，它会 "stop the whole world" 进行垃圾回收，这样整个垃圾回收的时长就增加了
 
 步骤如下
-1。 初始标记 - 标记 GR Root 能直达的对象 (这里话费的时间是很短的)
-2。 并行标记 - 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
-3。 重新标记- 标记那些在GC的同时，由于用户线程造成的标记的更改，再更正一下
-4。 并行清理
+1。 初始标记 - 标记 GR Root以及 被年轻代引用的老年代的对象 (这里化费的时间是很短的)
+2。 concurrent-mark - 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
+3。 concurrent-preclean- 标记那些在GC的同时，由于用户线程造成的引用的变更
+4。 Final Mark: 最终标记，stop the world，做最终的标记
+5。 并行清理
 
 
-G1：
-G1的内存的布局跟其他GC收集器不一样，它采用将内存划成一个一个独立的Region块
+G1(Garbage First)：
+G1的内存的布局跟其他GC收集器不一样，它采用将内存划成一个一个独立的Region块，每个region都要自己的 young generation 和 old generation
 G1回收的时候会跟踪各个Region的回收价值，回收价值= 回收的堆内存大小以及需要消耗的时间的一个比值，后台会维护一个列表，每次回收的时候会根据设定的回收时间，优先回收价值最大的Region，这也是 G1（Garbage-First的由来）
 如何避免全堆的扫描：
     每个Region块都会维护一个自己的对象引用表，remember set；当对某个对象进行修改的时候，会对它引用到的对象进行分析，然后更新它所引用到的对象所在的Region的 进行remember set；
     这样在回收的时候，只需要查看 Region的特定remember set，然后就可以知道需要回收哪些对象，而不用对全堆进行扫描了
+所以G1可以认为是一个 soft real-time 垃圾回收器，即它可以在指定的时间内做完回收的工作
 G1回收的步骤：
 1。 初始标记- 只标记GC root能直接达到的对象
-2。 并行标记- 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
-3。 最终标记 - 由于并行标记的时候，用户线程还在运行，会导致标记产生变动，这一部分需要记录，记作： remember set log； 然后将这一步的结果合并到 上一步产生的remember set中去
-4。 根据设定的参数，筛选回收
+2。 concurrent-mark- 顺着GC ROOT，往下找，直到走到最叶子的地方，把经过的对象都标记一下
+3。 remark - 由于并行标记的时候，用户线程还在运行，会导致标记产生变动，这一部分需要记录，记作： remember set log； 然后将这一步的结果合并到 上一步产生的remember set中去
+4。 cleanup - 根据设定的参数，筛选回收
 
 
 CMS 跟 G1的 "初始标记"和"最终标记"/"重新标记" 都会 stop the world，但他们的时间不会太长
+
+
+### Examples
+#### CMS
+
+VM  参数：
+```
+参数：
+
+-Xms512m
+-Xmx512m
+-Xloggc:D:/tmp/gc/gc.log
+-XX:+PrintGCDetails
+-XX:+PrintGCTimeStamps
+-XX:+PrintTenuringDistribution
+-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=D:/tmp/gc/heap_dump.hprof
+-XX:MaxMetaspaceSize=300m
+-XX:NewRatio=2
+-XX:NewSize=64m
+-XX:SurvivorRatio=8
+-XX:+UseParNewGC
+-XX:+UseConcMarkSweepGC
+
+
+日志：
+6.260: [GC (Allocation Failure) 6.260: [ParNew
+Desired survivor size 8945664 bytes, new threshold 1 (max 15)
+- age   1:   14017128 bytes,   14017128 total
+: 154834K->13910K(157248K), 0.0826613 secs] 265429K->248072K(506816K), 0.0827879 secs] [Times: user=0.25 sys=0.03, real=0.08 secs]
+
+6.343: [GC (CMS Initial Mark) [1 CMS-initial-mark: 234161K(349568K)] 252168K(506816K), 0.0004071 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+6.343: [CMS-concurrent-mark-start]
+6.346: [CMS-concurrent-mark: 0.002/0.002 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+6.346: [CMS-concurrent-preclean-start]
+6.346: [CMS-concurrent-preclean: 0.000/0.000 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+6.346: [CMS-concurrent-abortable-preclean-start]
+7.959: [CMS-concurrent-abortable-preclean: 0.299/1.612 secs] [Times: user=0.45 sys=0.05, real=1.61 secs]
+7.959: [GC (CMS Final Remark) [YG occupancy: 89144 K (157248 K)]7.959: [Rescan (parallel) , 0.0024510 secs]7.962: [weak refs processing, 0.0000414 secs]7.962: [class unloading, 0.0022078 secs]7.964: [scrub symbol table, 0.0021422 secs]7.966: [scrub string table, 0.0006285 secs][1 CMS-remark: 234161K(349568K)] 323306K(506816K), 0.0080991 secs] [Times: user=0.06 sys=0.00, real=0.01 secs]
+7.967: [CMS-concurrent-sweep-start]
+7.968: [CMS-concurrent-sweep: 0.001/0.001 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+7.968: [CMS-concurrent-reset-start]
+7.969: [CMS-concurrent-reset: 0.001/0.001 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+```
+
+#### G1 example
+```
+-Xms512m
+-Xmx512m
+-Xloggc:D:/tmp/gc/g1.log
+-XX:+PrintGCDetails
+-XX:+PrintGCTimeStamps
+-XX:+PrintTenuringDistribution
+-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=D:/tmp/gc/heap_dump_g1.hprof
+-XX:MaxMetaspaceSize=300m
+-XX:NewRatio=2
+-XX:NewSize=64m
+-XX:SurvivorRatio=8
+-XX:+UseG1GC
+-XX:InitiatingHeapOccupancyPercent=80
+
+
+8.608: [GC pause (G1 Humongous Allocation) (young) (initial-mark)
+Desired survivor size 4194304 bytes, new threshold 15 (max 15)
+, 0.0022582 secs]
+   [Parallel Time: 1.3 ms, GC Workers: 4]
+      [GC Worker Start (ms): Min: 8607.7, Avg: 8607.7, Max: 8607.8, Diff: 0.1]
+      [Ext Root Scanning (ms): Min: 0.4, Avg: 0.4, Max: 0.5, Diff: 0.0, Sum: 1.8]
+      [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+         [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Sum: 0]
+      [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+      [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+      [Object Copy (ms): Min: 0.7, Avg: 0.7, Max: 0.8, Diff: 0.0, Sum: 3.0]
+      [Termination (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+         [Termination Attempts: Min: 1, Avg: 2.0, Max: 3, Diff: 2, Sum: 8]
+      [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.1]
+      [GC Worker Total (ms): Min: 1.2, Avg: 1.2, Max: 1.3, Diff: 0.1, Sum: 4.9]
+      [GC Worker End (ms): Min: 8609.0, Avg: 8609.0, Max: 8609.0, Diff: 0.0]
+   [Code Root Fixup: 0.0 ms]
+   [Code Root Purge: 0.0 ms]
+   [Clear CT: 0.2 ms]
+   [Other: 0.7 ms]
+      [Choose CSet: 0.0 ms]
+      [Ref Proc: 0.2 ms]
+      [Ref Enq: 0.0 ms]
+      [Redirty Cards: 0.4 ms]
+      [Humongous Register: 0.0 ms]
+      [Humongous Reclaim: 0.0 ms]
+      [Free CSet: 0.0 ms]
+   [Eden: 3072.0K(64.0M)->0.0B(63.0M) Survivors: 0.0B->1024.0K Heap: 331.0M(512.0M)->328.8M(512.0M)]
+ [Times: user=0.00 sys=0.00, real=0.00 secs]
+8.610: [GC concurrent-root-region-scan-start]
+8.611: [GC concurrent-root-region-scan-end, 0.0009271 secs]
+8.611: [GC concurrent-mark-start]
+8.611: [GC concurrent-mark-end, 0.0001567 secs]
+8.612: [GC remark 8.612: [Finalize Marking, 0.0000731 secs] 8.612: [GC ref-proc, 0.0000656 secs] 8.613: [Unloading, 0.0007735 secs], 0.0026267 secs]
+ [Times: user=0.00 sys=0.00, real=0.00 secs]
+8.615: [GC cleanup 332M->332M(512M), 0.0006139 secs]
+ [Times: user=0.00 sys=0.00, real=0.00 secs]
+```

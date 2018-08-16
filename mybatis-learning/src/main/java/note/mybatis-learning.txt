@@ -1,0 +1,11 @@
+## JDBC
+
+### refer
+- http://www.vogella.com/tutorials/MySQLJava/article.html
+- http://chenjc-it.iteye.com/blog/1455688
+
+
+### statement
+Statement - Statement的接口
+PreparedStatement - 将SQL语句预编译好存放到PreparedStatement，这样它可以被调用多次
+CallableStatement - 用于执行 stored procedure

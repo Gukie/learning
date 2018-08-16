@@ -1,0 +1,53 @@
+## refer:
+- https://docs.oracle.com/javase/specs/jls/se8/html/jls-12.html
+
+一个类的创建，主要包含以下几个步骤：
+1. load
+    查找对应的class的二进制文件，并加载到内存中来; 如果找不到，会报ClassNotFoundException;
+    这一阶段，有可能会报 OOM异常，因为需要将二进制文件存放到内存中，而内存有可能不够了
+
+2. link
+    分三个阶段：
+    2.1. verify: 校验加载进来的二进制文件，是否是一个合法的class文件
+    2.2. prepare: 准备一些空间给类的static的field，以及当前class的所有方法所需要的空间(method table)；同时还会初始化 static的field，给他们赋予初始值，比如int的化是0
+    2.3. resolve: 检查被当前类使用到的引用(类或者类的field,method)是否正确(包括，是否存在，名称是否正确)， 以及是否做了一些非法的操作(比如实例化了一个abstract的类)
+                这个阶段会报的异常：
+                    InstantiationError(实例化一个abstract的时候会报)
+                    NoSuchFieldError
+                    NoSuchMethodError
+3. initialize (static part)
+    初始化;(先static filed，后static block)
+    3.1.初始化 static-fields 和 执行 static block; 静态变量的化，就是将程序里写的值赋予给变量，比如
+    ```
+    static int value = 3;
+    ```
+    在这个阶段，value就是3，而在link的prepare阶段，它的值是0
+
+    3.2.这个阶段的初始化，类的化会将其super-class/implemented-interfaces 的static部分也初始化掉(当然也会走一遍 load-link-initialize的过程); initialize父类的这个过程是递归进行的
+        但需要注意的是，初始化interface，是不会初始化它的 super-interfaces的
+    3.3. 需要注意的是，在加载类的时候，
+        Class.forName(String className) 会默认做这一步; 而ClassLoader则不会
+
+
+    Class.forName()的源码：
+    ```
+     public static Class<?> forName(String className)
+                    throws ClassNotFoundException {
+            Class<?> caller = Reflection.getCallerClass();
+            return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+        }
+
+
+     /** Called after security check for system loader access checks have been made. */
+        private static native Class<?> forName0(String name, boolean initialize,  ClassLoader loader,
+                                                Class<?> caller) throws ClassNotFoundException;
+     ```
+
+4. new
+- 这一步，是初始化 实例数据+实例block, 然后在调用 constructor里面的code.
+- 这里也是一个先父类，后子类的顺序；
+- 每一个类的实例化的顺序：
+    1. 先去实例化父类;
+    2. 等父类实例化好之后，再执行 实例参数的初始化; 这里的顺序，是按照他们在类文件的出现顺序来的，即 textual order.
+    3. 实例block的初始化
+    4. constructor里面的code的调用

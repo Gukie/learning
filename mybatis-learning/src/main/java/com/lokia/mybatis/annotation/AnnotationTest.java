@@ -40,7 +40,7 @@ public class AnnotationTest {
         SqlSessionFactory sessionFactory = null;
         try {
             sessionFactory = builder.build(Resources.getResourceAsReader(fileLocation));
-//            loadJdbcExtraConfig4DataSource(sessionFactory);
+            loadJdbcExtraConfig4DataSource(sessionFactory);
         } catch (IOException e) {
             e.printStackTrace();
         }

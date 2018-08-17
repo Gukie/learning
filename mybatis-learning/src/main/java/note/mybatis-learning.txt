@@ -9,3 +9,15 @@
 Statement - Statement的接口
 PreparedStatement - 将SQL语句预编译好存放到PreparedStatement，这样它可以被调用多次
 CallableStatement - 用于执行 stored procedure
+
+
+### scope and lifecycle
+- SqlSessionFactoryBuilder, 这个类是用来创建 SqlSessionFactory的，只要SqlSessionFactory被创建出来了，它的任务就完成了，该实例就可以被回收了; 所以，建议它的scope为： method-scope
+- SqlSessionFactory， 用于创建SqlSession，建议是application-scope，并且是在整个application中是单例
+- SqlSession， 执行具体的SQL操作，建议是一个HTTP Request一个SqlSession，用完就释放掉，即close掉
+- Mappers -是在SqlSession中使用的，其scope不能超过SqlSession的scope; 但一般的，它用完就可以回收了，所以建议它是一个 method-scope，
+
+
+### 连接何时使用
+是在SqlSession执行具体的SQL的时候，会从 datasource中获取一个connection，去执行具体的SQL语句; 即： 在SQL执行阶段会去获取
+具体可以参考类： org.apache.ibatis.executor.BaseExecutor.getConnection

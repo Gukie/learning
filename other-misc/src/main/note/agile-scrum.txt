@@ -1,0 +1,93 @@
+## refer
+- https://www.scrum.org/resources/what-is-scrum
+- https://www.scrumguides.org/scrum-guide.html#theory
+- https://www.neonrain.com/agile-scrum-web-development/
+
+## Agile 与 Scrum
+Agile：一个价值观
+Scrum： 是一个Framework，是Agile的一个实践; Agile的实践除了Scrum之外，还有Kanban，XP，FDD等
+
+
+### 一些专业术语
+1. DoR: Definition Of Ready
+2. DoD：Definition Of Done
+以上定义，都需要Team一起做出决定的，每个Team给出的定义会有所不同
+
+## Scrum的3355
+#### Scrum的3个Role
+作为一个Team，Win as a team,Fail as a team.
+
+- PO: Product Owner
+	该角色，一般要求既要有业务能力，也要有技术能力; 它是一个Team中，Customer与Team对接的一个中间人
+	Customer <---> PO <-----> Team
+	一般的工作：
+		1. 产品功能列表
+		2. 明确 产品的价值
+		3. 产品功能列表的优先级
+- Scrum Master
+	Team 中的教练。一般该角色的工作是：
+	1. 团队的清道夫，当团队遇到问题时，帮团队去协调
+	2. 团队的保护伞，当有外界干扰时，会抵挡
+	3. 搅屎棍，当团队比较疲惫的时候，需要搞一些刺激团队的事情
+	
+- Developer Team，一般的，一个Team的人数不能太多，控制在5-9人会比较好
+	所有的团队成员都是开发成员; 但每个成员有自己擅长的领域，比如前端，后端，测试
+	
+
+#### Scrum的3个 Artifacts
+- Product Backlog Items（简称PBI）
+	以下items都可以作为PBI
+	1. Feature - 功能需求
+	2. Defects - 遗留的缺陷
+	3. Technical Work - 技术债，技术探索
+	4. Knowledge acquire - 任何专业知识的调研(可能是行业领域)
+	
+评估一个PBI好坏的标准： DEEP
+	1. Detailed， 是否比较清晰
+	2. Emergent，是否紧急
+	3. Estimated， 是否是可预估的，一般指时间上
+	4. Prioritied， 是否有优先级
+	
+- Sprint Backlog Items(简称SBI)
+这个是从 PBI中分解出来的;
+SBI可以用User Story表示，一个User Story是否好坏，有一个评估标准：INVEST
+	1. Independent，独立的，不依赖别的任务
+	2. Negotiable，可协商的，即可以跟Customer进行一些探讨
+	3. Valuable，有价值的，这个很重要，无价值的东西是浪费时间
+	4. Estimated，可评估的
+	5. Small，要足够小
+	6. Testable， 可测试的
+	
+- Potential shippable product Increament(潜在的可交付的产品增量)
+	1. 之所以说是潜在的，是因为发不发布是要根据商业决策来的；
+	2. 产品增量，是指当前迭代是在之前迭代的基础上再加新功能，而非影响已有的功能
+	3. 这里就需要Team要按照自己的 DoD去评估一个增量是否可交付
+
+	
+#### Scrum的5个仪式(Activity)
+- Sprint, 这一阶段主要是用于定义一个Sprint的时间长度，确定当前Sprint的目标
+- Planning
+	主要是做一些计划; 
+	根据当前Sprint的目标，然后再根据当前Sprint的人力，承诺可交付的User Story，然后team member对任务进行task(不是assign，而是take，take体现了团队的自组织，但这个很难)
+
+- Daily Scrum
+	每日站会，这里每个成员主要说明： 昨天做了什么，今天的计划，以及遇到的风险;
+	需要注意的是，这里不是向谁汇报，而是陈诉当前的状态即可，让所有人都了解其他成员在做什么，进度怎么样，遇到什么问题，如果自己有能力提供support可以及时提供，这样整个团队就是朝着sprint的Goal前进的
+	如果每个成员做的事情，别的成员不了解，那么这就有问题，毕竟大家不是朝同一个方向前进的
+	
+- Sprint Review，这一步，主要是sprint成果的展示，是从产品角度来的
+- Sprint Retrospective，主要是回顾整个sprint，团队哪些地方做的好的，哪些地方做的不好，有哪些action可以实施
+
+整个Sprint的流程，其实跟另外一个管理方面的法则很相似，它叫：PDCA
+	1. Plan (计划)
+	2. Do (执行)
+	3. Check(检查有哪些问题)
+	4. Action(纠正)
+	
+#### Scrum的5个价值观
+	1. Courage，有勇气对不合理的需求/时间排期，Say No
+	2. Openness， 开放，而非封闭; 所有人遇到问题都可以提出来，Team想办法解决
+	3. Focus， 专注Sprint的Goal
+	4. Commitment， 承诺
+	5. Respect， 尊重他人
+	

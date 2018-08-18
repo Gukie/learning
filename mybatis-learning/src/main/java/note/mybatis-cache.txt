@@ -1,0 +1,54 @@
+二级缓存的Cache, 是采用一种叫做装饰模式的方式进行build的
+最里面一层是 PerpetualCache, 它的数据结构是一个 HashMap
+```
+ public class PerpetualCache implements Cache {
+
+   private String id;
+
+   private Map<Object, Object> cache = new HashMap<Object, Object>();
+```
+
+二级Cache的具体创建过程，详见： org.apache.ibatis.builder.MapperBuilderAssistant.useNewCache
+```
+ public Cache useNewCache(Class<? extends Cache> typeClass,
+      Class<? extends Cache> evictionClass,
+      Long flushInterval,
+      Integer size,
+      boolean readWrite,
+      boolean blocking,
+      Properties props) {
+    Cache cache = new CacheBuilder(currentNamespace)
+        .implementation(valueOrDefault(typeClass, PerpetualCache.class))
+        .addDecorator(valueOrDefault(evictionClass, LruCache.class))
+        .clearInterval(flushInterval)
+        .size(size)
+        .readWrite(readWrite)
+        .blocking(blocking)
+        .properties(props)
+        .build();
+    configuration.addCache(cache);
+    currentCache = cache;
+    return cache;
+  }
+```
+然后在CacheBuilder的build方法中可以看到具体的过程，就是一个装饰再装饰的过程，最里一层是PerpetualCache
+
+```
+  public Cache build() {
+    setDefaultImplementations();
+    Cache cache = newBaseCacheInstance(implementation, id);
+    setCacheProperties(cache);
+    // issue #352, do not apply decorators to custom caches
+    if (PerpetualCache.class.equals(cache.getClass())) {
+      for (Class<? extends Cache> decorator : decorators) {
+        cache = newCacheDecoratorInstance(decorator, cache);
+        setCacheProperties(cache);
+      }
+      cache = setStandardDecorators(cache);
+    } else if (!LoggingCache.class.isAssignableFrom(cache.getClass())) {
+      cache = new LoggingCache(cache);
+    }
+    return cache;
+  }
+```
+

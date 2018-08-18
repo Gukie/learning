@@ -26,10 +26,10 @@
     3.2.这个阶段的初始化，类的化会将其super-class/implemented-interfaces 的static部分也初始化掉(当然也会走一遍 load-link-initialize的过程); initialize父类的这个过程是递归进行的
         但需要注意的是，初始化interface，是不会初始化它的 super-interfaces的
     3.3. 需要注意的是，在加载类的时候，
-        Class.forName(String className) 会默认做这一步; 而ClassLoader则不会
+        Class.forName(String className) 会默认做这一步; 而ClassLoader则不会; 这样Class.forName就可以通过static block，做一些加载的动作了
 
 
-    Class.forName()的源码：
+ Class.forName()的源码：
     ```
      public static Class<?> forName(String className)
                     throws ClassNotFoundException {
@@ -43,6 +43,12 @@
                                                 Class<?> caller) throws ClassNotFoundException;
      ```
 
+     ClassLoader#loadClass，不会有resolve阶段，即不会进行使用的引用的check
+```
+     public Class<?> loadClass(String name) throws ClassNotFoundException {
+             return loadClass(name, false);
+         }
+````
 4. new
 - 这一步，是初始化 实例数据+实例block, 然后在调用 constructor里面的code.
 - 这里也是一个先父类，后子类的顺序；

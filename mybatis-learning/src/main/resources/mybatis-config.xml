@@ -9,6 +9,8 @@
     </properties>
     <settings>
         <setting name="logImpl" value="SLF4J"/>
+        <!--<setting name="localCacheScope" value="STATEMENT"/>-->
+        <setting name="localCacheScope" value="SESSION"/>
     </settings>
     <environments default="dev">
         <environment id="dev">
@@ -24,6 +26,7 @@
     </environments>
 
     <mappers>
-        <mapper class="com.lokia.mybatis.annotation.BuildingMapper"></mapper>
+        <mapper class="com.lokia.mybatis.annotation.mapper.BuildingMapper"></mapper>
+        <mapper resource="mapper/*.xml"/>
     </mappers>
 </configuration>

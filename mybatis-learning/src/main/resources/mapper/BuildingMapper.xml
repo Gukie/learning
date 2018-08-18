@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD mapper 3.0, free to use//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lokia.mybatis.annotation.mapper.BuildingMapper">
+<cache eviction="FIFO" flushInterval="6000" readOnly="true" size="1024"></cache>
+    <sql id="BASE_COLUMN">
+        id,name,location,gmt_created,gmt_modified,source
+    </sql>
+    <select id="getById4SecondCache" resultType="com.lokia.mybatis.bean.Building">
+        SELECT
+          <include refid="BASE_COLUMN"></include>
+        FROM
+          building
+        WHERE
+          id = #{id}
+    </select>
+</mapper>

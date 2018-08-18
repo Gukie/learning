@@ -1,8 +1,10 @@
 ## JDBC
 
 ### refer
+- http://www.mybatis.org/mybatis-3/configuration.html#settings （官网 ）
 - http://www.vogella.com/tutorials/MySQLJava/article.html
-- http://chenjc-it.iteye.com/blog/1455688
+- http://chenjc-it.iteye.com/blog/1455688 (原理篇)
+- https://tech.meituan.com/mybatis_cache.html(缓存)
 
 
 ### statement

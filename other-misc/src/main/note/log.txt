@@ -2,9 +2,27 @@
 - https://www.slf4j.org/manual.html
 
 ## slf4j
-1. slf4j是一个抽象的接口，可以供其他的日志框架使用
+1. slf4j是一个抽象的接口，可以供其他的日志框架接入，它们被称为bindings
 > The Simple Logging Facade for Java (SLF4J) serves as a simple facade or abstraction for various logging frameworks, such as java.util.logging, logback and log4j. SLF4J allows the end-user to plug in the desired logging framework at deployment time
 2. 如果使用的化，需要引入一些必要的jar
     2.1. slf4j-api.xxx.jar
     2.2. 使用的日志框架的jar
 
+### 不同bindings锁依赖的jar
+- log4j12
+    slf4j-log4j12.xxx.jar
+    使用log4j
+- jdk
+    slf4j-jdk.xxx.jar
+    使用 java.util.logging 日志实现
+- nop， 将所有的日志都丢弃掉
+    slf4J-nop.xxx.jar
+- SLF4J simple
+> 使用 SLF4J simple实现，日志将会打印到 System.err,并且只有Level>=INFO的日志才会输出，适用于小应用
+    SLF4J-simple.xxx.jar
+
+- JCL (Jakarta Commons Logging)
+    slf4j-jcl.xxx.jar
+- logback 该日志框架，是直接实现 SLF4J的，所以兼容起来毫无违和感
+    logback-core.xxx.jar
+    logback-classic.xxx.jar

@@ -281,12 +281,12 @@ Java中的IO
 
 
 ##### Summary
-BIO：全程都是阻塞的，所以是同步阻塞IO
-NIO: 
+- BIO：全程都是阻塞的，所以是同步阻塞IO
+- NIO: 
 	1. 数据准备阶段，是非阻塞的; 这个阶段，系统会通过 SelectionKey 去轮询数据是否ready了
 	2. 数据copy阶段，是同步的; 即channel的read/write操作，会一致阻塞，知道数据处理完成
 	3. 所以NIO是同步非阻塞IO	
-AIO：进程发送一个 system call之后，就可以处理其他的事情; 当 OS系统将数据准备好，并且copy到用户进程完成后，会通知用户进程;
+- AIO：进程发送一个 system call之后，就可以处理其他的事情; 当 OS系统将数据准备好，并且copy到用户进程完成后，会通知用户进程;
 	全程都不会有阻塞，所以AIO是异步非阻塞IO
 
 

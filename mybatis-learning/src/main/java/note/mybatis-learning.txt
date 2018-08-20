@@ -23,3 +23,42 @@ CallableStatement - 用于执行 stored procedure
 ### 连接何时使用
 是在SqlSession执行具体的SQL的时候，会从 datasource中获取一个connection，去执行具体的SQL语句; 即： 在SQL执行阶段会去获取
 具体可以参考类： org.apache.ibatis.executor.BaseExecutor.getConnection
+
+---
+### SqlSession的autocommit
+
+新建一个 SqlSession的时候，默认是
+```
+SqlSession session = sessionFactory.openSession();
+```
+这样，默认是一个 SqlSession，一个事务，需要用户在引用程序里手动的commit，like:
+```
+ private static void doCommitIfNeeded(SqlSession session) {
+        try {
+            Connection connection = session.getConnection();
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.commit();
+            }
+        } catch (SQLException e) {
+
+        }
+    }
+```
+
+在Spring-mybatis中，是进行了封装的，将autoCommit都设置为了false，交由Spring的事务管理器进行处理
+org.springframework.jdbc.datasource.DataSourceTransactionManager#doBegin
+```
+
+        Connection con = null;
+        con = txObject.getConnectionHolder().getConnection();
+            Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
+            txObject.setPreviousIsolationLevel(previousIsolationLevel);
+            if (con.getAutoCommit()) {
+                txObject.setMustRestoreAutoCommit(true);
+                if (this.logger.isDebugEnabled()) {
+                    this.logger.debug("Switching JDBC Connection [" + con + "] to manual commit");
+                }
+
+                con.setAutoCommit(false);
+            }
+```

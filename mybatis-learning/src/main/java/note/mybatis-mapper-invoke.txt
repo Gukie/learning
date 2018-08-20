@@ -1,0 +1,178 @@
+## Mybatis Mapper调用
+
+Mapper，都是接口;
+在Mybatis中，Mapper是被包装在一个 MapperProxyFactory中的
+在获取Mapper的时候，会new 一个 MapperProxy出来
+然后，在调用具体某个方法的时候，会被MapperProxy代理，然后去 SqlSession下执行对应的 statement, 其中statementId就是 MapperClassName+"."+methodName
+
+---
+具体的每一个步骤如下：
+
+### 1.将Mapper注册到Configuration中
+org.apache.ibatis.binding.MapperRegistry.addMapper
+```
+public <T> void addMapper(Class<T> type) {
+    if (type.isInterface()) {
+      if (hasMapper(type)) {
+        throw new BindingException("Type " + type + " is already known to the MapperRegistry.");
+      }
+      boolean loadCompleted = false;
+      try {
+        knownMappers.put(type, new MapperProxyFactory<T>(type));
+        // It's important that the type is added before the parser is run
+        // otherwise the binding may automatically be attempted by the
+        // mapper parser. If the type is already known, it won't try.
+        MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
+        parser.parse();
+        loadCompleted = true;
+      } finally {
+        if (!loadCompleted) {
+          knownMappers.remove(type);
+        }
+      }
+    }
+  }
+```
+
+
+### 2.获取Mapper的时候，会new 一个 MapperProxy出来
+org.apache.ibatis.binding.MapperRegistry.getMapper
+```
+  public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
+    if (mapperProxyFactory == null) {
+      throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
+    }
+    try {
+      return mapperProxyFactory.newInstance(sqlSession);
+    } catch (Exception e) {
+      throw new BindingException("Error getting mapper instance. Cause: " + e, e);
+    }
+  }
+
+```
+MapperProxyFactory.newInstance
+```
+  protected T newInstance(MapperProxy<T> mapperProxy) {
+      return (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[] { mapperInterface }, mapperProxy);
+    }
+
+    public T newInstance(SqlSession sqlSession) {
+      final MapperProxy<T> mapperProxy = new MapperProxy<T>(sqlSession, mapperInterface, methodCache);
+      return newInstance(mapperProxy);
+    }
+```
+
+### 3.然后，在调用具体某个方法的时候，会被代理，去SqlSession下执行对应的 statement；statementId就是 MapperClassName+"."+methodName
+MapperProxy.invoke
+```
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    try {
+      if (Object.class.equals(method.getDeclaringClass())) {
+        return method.invoke(this, args);
+      } else if (isDefaultMethod(method)) {
+        return invokeDefaultMethod(proxy, method, args);
+      }
+    } catch (Throwable t) {
+      throw ExceptionUtil.unwrapThrowable(t);
+    }
+    final MapperMethod mapperMethod = cachedMapperMethod(method);
+    return mapperMethod.execute(sqlSession, args);
+  }
+```
+
+#### 4.MapperMethod.execute, 是让SqlSession通过statementId去执行具体的SQL
+```
+public Object execute(SqlSession sqlSession, Object[] args) {
+    Object result;
+    switch (command.getType()) {
+      case INSERT: {
+    	Object param = method.convertArgsToSqlCommandParam(args);
+        result = rowCountResult(sqlSession.insert(command.getName(), param));
+        break;
+      }
+      case UPDATE: {
+        Object param = method.convertArgsToSqlCommandParam(args);
+        result = rowCountResult(sqlSession.update(command.getName(), param));
+        break;
+      }
+      case DELETE: {
+        Object param = method.convertArgsToSqlCommandParam(args);
+        result = rowCountResult(sqlSession.delete(command.getName(), param));
+        break;
+      }
+      case SELECT:
+        if (method.returnsVoid() && method.hasResultHandler()) {
+          executeWithResultHandler(sqlSession, args);
+          result = null;
+        } else if (method.returnsMany()) {
+          result = executeForMany(sqlSession, args);
+        } else if (method.returnsMap()) {
+          result = executeForMap(sqlSession, args);
+        } else if (method.returnsCursor()) {
+          result = executeForCursor(sqlSession, args);
+        } else {
+          Object param = method.convertArgsToSqlCommandParam(args);
+          result = sqlSession.selectOne(command.getName(), param);
+        }
+        break;
+      case FLUSH:
+        result = sqlSession.flushStatements();
+        break;
+      default:
+        throw new BindingException("Unknown execution method for: " + command.getName());
+    }
+    if (result == null && method.getReturnType().isPrimitive() && !method.returnsVoid()) {
+      throw new BindingException("Mapper method '" + command.getName()
+          + " attempted to return null from a method with a primitive return type (" + method.getReturnType() + ").");
+    }
+    return result;
+  }
+```
+其中command在创建的时候，name就是会被设置为 MapperInterfaceClassName+"."+MethodName
+```
+public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      final String methodName = method.getName();
+      final Class<?> declaringClass = method.getDeclaringClass();
+      MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
+          configuration);
+      if (ms == null) {
+        if (method.getAnnotation(Flush.class) != null) {
+          name = null;
+          type = SqlCommandType.FLUSH;
+        } else {
+          throw new BindingException("Invalid bound statement (not found): "
+              + mapperInterface.getName() + "." + methodName);
+        }
+      } else {
+        name = ms.getId();
+        type = ms.getSqlCommandType();
+        if (type == SqlCommandType.UNKNOWN) {
+          throw new BindingException("Unknown execution method for: " + name);
+        }
+      }
+    }
+
+ private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
+        Class<?> declaringClass, Configuration configuration) {
+      String statementId = mapperInterface.getName() + "." + methodName;
+      if (configuration.hasStatement(statementId)) {
+        return configuration.getMappedStatement(statementId);
+      } else if (mapperInterface.equals(declaringClass)) {
+        return null;
+      }
+      for (Class<?> superInterface : mapperInterface.getInterfaces()) {
+        if (declaringClass.isAssignableFrom(superInterface)) {
+          MappedStatement ms = resolveMappedStatement(superInterface, methodName,
+              declaringClass, configuration);
+          if (ms != null) {
+            return ms;
+          }
+        }
+      }
+      return null;
+    }
+  }
+```
+

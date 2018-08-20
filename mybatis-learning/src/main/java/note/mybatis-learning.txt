@@ -62,3 +62,19 @@ org.springframework.jdbc.datasource.DataSourceTransactionManager#doBegin
                 con.setAutoCommit(false);
             }
 ```
+
+### Cache 和 Executor
+二级Cache和Executor，都是采用装饰者模式进行包装的
+Executor的化，比如 CachingExecutor
+```
+public class CachingExecutor implements Executor {
+
+  private Executor delegate;
+  private TransactionalCacheManager tcm = new TransactionalCacheManager();
+
+  public CachingExecutor(Executor delegate) {
+    this.delegate = delegate;
+    delegate.setExecutorWrapper(this);
+  }
+
+```

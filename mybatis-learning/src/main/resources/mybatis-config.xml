@@ -27,6 +27,6 @@
 
     <mappers>
         <mapper class="com.lokia.mybatis.annotation.mapper.BuildingMapper"></mapper>
-        <mapper resource="mapper/*.xml"/>
+        <mapper resource="mapper/BuildingMapper.xml"/>
     </mappers>
 </configuration>

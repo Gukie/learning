@@ -1,0 +1,140 @@
+### refer
+- https://dev.mysql.com/doc/refman/5.6/en/innodb-autocommit-commit-rollback.html (MySQL 官网关于 autoCommit的解释)
+
+### 为什么在创建SqlSession的时候，明明autoCommit都这是为了true，却还是需要手动调用commit，二级缓存才会生效
+
+
+通过SQLSessionFactory创建一个SqlSession的时候，我们可以设置 autoCommit是否为true, 默认是false
+```
+ SqlSession session1 = sessionFactory.openSession(true);
+```
+
+这个参数影响到的地方，只是Connection;在其他地方的commit，其实都是要手动触发的，比如用于二级cache的commit;
+在获取连接的时候，Connection在创建的时候，默认autoCommit=true的;
+但创建好connection或者从连接池中获取到Connection之后，会对autoCommit再设置以便;
+
+org.apache.ibatis.transaction.jdbc.JdbcTransaction.openConnection
+```
+  protected void openConnection() throws SQLException {
+    if (log.isDebugEnabled()) {
+      log.debug("Opening JDBC Connection");
+    }
+    connection = dataSource.getConnection();
+    if (level != null) {
+      connection.setTransactionIsolation(level.getLevel());
+    }
+    setDesiredAutoCommit(autoCommmit);
+  }
+
+   protected void setDesiredAutoCommit(boolean desiredAutoCommit) {
+      try {
+        if (connection.getAutoCommit() != desiredAutoCommit) {
+          if (log.isDebugEnabled()) {
+            log.debug("Setting autocommit to " + desiredAutoCommit + " on JDBC Connection [" + connection + "]");
+          }
+          connection.setAutoCommit(desiredAutoCommit);
+        }
+      } catch (SQLException e) {
+        // Only a very poorly implemented driver would fail here,
+        // and there's not much we can do about that.
+        throw new TransactionException("Error configuring AutoCommit.  "
+            + "Your driver may not support getAutoCommit() or setAutoCommit(). "
+            + "Requested setting: " + desiredAutoCommit + ".  Cause: " + e, e);
+      }
+    }
+```
+
+最后再 ConnectionImpl.setAutoCommit中，会执行以下语句，对当前连接的自动提交进行一个设置：
+```
+ this.session.execSQL(null, autoCommitFlag ? "SET autocommit=1" : "SET autocommit=0", -1, null, false, this.nullStatementResultSetFactory,
+                            this.database, null, false);
+```
+
+原文如下:
+>>In InnoDB, all user activity occurs inside a transaction. If autocommit mode is enabled, each SQL statement forms a single transaction on its own. By default, MySQL starts the session for each new connection with autocommit enabled, so MySQL does a commit after each SQL statement if that statement did not return an error.
+>>If a statement returns an error, the commit or rollback behavior depends on the error
+
+
+## 为什么需要手动调用commit，二级cache才能使用？
+
+查询的时候，首先会从CachingExecutor进行
+
+org.apache.ibatis.executor.CachingExecutor.query(org.apache.ibatis.mapping.MappedStatement, java.lang.Object, org.apache.ibatis.session.RowBounds, org.apache.ibatis.session.ResultHandler, org.apache.ibatis.cache.CacheKey, org.apache.ibatis.mapping.BoundSql)
+
+```
+ private TransactionalCacheManager tcm = new TransactionalCacheManager();
+ public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
+      throws SQLException {
+    Cache cache = ms.getCache();
+    if (cache != null) {
+      flushCacheIfRequired(ms);
+      if (ms.isUseCache() && resultHandler == null) {
+        ensureNoOutParams(ms, parameterObject, boundSql);
+        @SuppressWarnings("unchecked")
+        List<E> list = (List<E>) tcm.getObject(cache, key); // 获取二级缓存的数据
+        if (list == null) {
+          list = delegate.<E> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          tcm.putObject(cache, key, list); // issue #578 and #116  将获取到数据放到二级缓存中去
+        }
+        return list;
+      }
+    }
+    return delegate.<E> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+  }
+```
+
+从TransactionalCacheManager的putObject的源码可以看出，其实二级缓存，它只是将当前数据缓存在TransactionalCache.entriesToAddOnCommit中，并没有真正的落地到对应的 delegate-cache中
+```
+  public void putObject(Cache cache, CacheKey key, Object value) {
+    getTransactionalCache(cache).putObject(key, value);
+  }
+```
+
+org.apache.ibatis.cache.decorators.TransactionalCache.putObject:
+```
+ private Map<Object, Object> entriesToAddOnCommit;
+ @Override
+  public void putObject(Object key, Object object) {
+    entriesToAddOnCommit.put(key, object);
+  }
+```
+
+只有在commit的时候，才会将数据存储到真正的Delegate-cache中
+```
+  public void commit() {
+    if (clearOnCommit) {
+      delegate.clear();
+    }
+    flushPendingEntries();
+    reset();
+  }
+
+    private void flushPendingEntries() {
+      for (Map.Entry<Object, Object> entry : entriesToAddOnCommit.entrySet()) {
+        delegate.putObject(entry.getKey(), entry.getValue());
+      }
+      for (Object entry : entriesMissedInCache) {
+        if (!entriesToAddOnCommit.containsKey(entry)) {
+          delegate.putObject(entry, null);
+        }
+      }
+    }
+```
+
+从获取数据的地方，也可以看出，没有commit，是取不到数据的
+```
+  @Override
+  public Object getObject(Object key) {
+    // issue #116
+    Object object = delegate.getObject(key);
+    if (object == null) {
+      entriesMissedInCache.add(key);
+    }
+    // issue #146
+    if (clearOnCommit) {
+      return null;
+    } else {
+      return object;
+    }
+  }
+```

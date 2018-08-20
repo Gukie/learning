@@ -30,7 +30,7 @@ public class AnnotationTest {
 
         String fileLocation = "mybatis-config.xml";
         SqlSessionFactory sessionFactory = getSqlSessionFactory(fileLocation);
-        readDataNormally(sessionFactory, false);
+        readDataNormally(sessionFactory, true);
     }
 
 
@@ -43,6 +43,8 @@ public class AnnotationTest {
         try {
             BuildingMapper buildingMapper = sqlSession.getMapper(BuildingMapper.class);
             Building building = buildingMapper.getById("BD15101103674482");
+            System.out.println(building);
+            building = buildingMapper.getById("BD15101103674482");
             System.out.println(building);
         } catch (Exception e) {
             e.printStackTrace();

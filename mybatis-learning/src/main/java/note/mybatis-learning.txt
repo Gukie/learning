@@ -5,6 +5,7 @@
 - http://www.vogella.com/tutorials/MySQLJava/article.html
 - http://chenjc-it.iteye.com/blog/1455688 (原理篇)
 - https://tech.meituan.com/mybatis_cache.html(缓存)
+- https://www.cnblogs.com/selene/p/4631244.html (懒加载 与 按需加载)
 
 
 ### statement
@@ -78,3 +79,8 @@ public class CachingExecutor implements Executor {
   }
 
 ```
+
+
+### lazyLoadingEnabled and aggressiveLazyLoading
+lazyLoadingEnabled - 这个是懒加载；如果为true，当SQL中有association，即有SQL中的某个属性需要关联到其他SQL时，会在该属性使用的时候，它关联的SQL才会被加载
+aggressiveLazyLoading - 如果为true，那么在lazy-object的所有属性在lazy-object对象的任一个方法被调用的时候加载： 而如果该属性为false，则lazy-object的属性是按需加载的

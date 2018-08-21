@@ -14,3 +14,21 @@
 - 每一个Servlet，都有自己的 Servlet-WebApplicationContext(可以叫做Servlet-Context)，相互之间是独立的
 - 每一个 Servlet-WebApplicationContext，都会将自己的parent设置成 Root-WebApplicationContext
 
+### ServletContext
+- refer: http://docs.jboss.org/jbossas/javadoc/7.1.2.Final/javax/servlet/ServletContext.html?is-external=true
+
+ServletContext是servlet跟servlet容器进行通信的一个媒介；
+一个JVM中，一个web application只会有一个servletContext;
+web application： 表现形式是一个war包，它是多个servlet的一个集合，通过不同的URL进行访问
+> There is one context per "web application" per Java Virtual Machine. (A "web application" is a collection of servlets and content installed under a specific subset of the server's URL namespace such as /catalog and possibly installed via a .war file.)
+
+### Servlet
+- refer：https://tomcat.apache.org/tomcat-5.5-doc/servletapi/javax/servlet/Servlet.html
+
+- Servlet是什么？
+ >- Servlet是一个在web server中运行的小的Java程序; 它处理来自 web client的请求(request and response)，一般该请求是通过HTTP的形式进行的;
+
+- Servlet的生命周期
+>- init， servlet容器表明一个servlet将要被进入 service状态了
+>- service
+>- destroy, 表明当前servlet将要被回收; 一般是在所有在service方法中执行的线程都结束了或者service方法执行的时间超过指定的时间，destroy方法会被调用

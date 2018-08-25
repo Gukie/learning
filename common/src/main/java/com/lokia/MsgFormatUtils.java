@@ -17,7 +17,7 @@ public class MsgFormatUtils {
      */
     public static String generateFormattedMsg(String detail, Object... params) {
         String keyword = "{}";
-        if(params == null || params.length == 0 || !detail.contains(keyword)){
+        if (params == null || params.length == 0 || !detail.contains(keyword)) {
             return detail;
         }
         StringBuilder pattern = generateMsgPattern(detail, keyword);
@@ -34,10 +34,10 @@ public class MsgFormatUtils {
         int keywordNum = 0;
         int fromIndex = 0;
         int keywordIndex = -1;
-        while((keywordIndex = detail.indexOf(keyword,fromIndex))!=-1){
-            pattern.append(detail.substring(fromIndex,keywordIndex));
+        while ((keywordIndex = detail.indexOf(keyword, fromIndex)) != -1) {
+            pattern.append(detail.substring(fromIndex, keywordIndex));
             pattern.append("{").append(keywordNum).append("}");
-            fromIndex=keywordIndex+keyword.length();
+            fromIndex = keywordIndex + keyword.length();
             keywordNum++;
         }
         if (fromIndex != detail.length()) {

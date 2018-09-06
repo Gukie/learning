@@ -29,7 +29,61 @@ Bean factory implementations should support the standard bean lifecycle interfac
 
 
 ## BeanFactoryPostProcessor
-BeanFactoryPostProcessor 是在容器中的所有bean开始实例化之前， 它的一个方法是： postProcessBeanFactory
+BeanFactoryPostProcessor 是在容器中的所有bean开始实例化之前对metadata进行一些修改(所谓的metadata就是bean的定义，比如类的field是什么，field的值是多少)
 可以通过实现BeanFactoryPostProcessor，对bean的definition进行一些修改. 
-
 如果是想对Bean的实例做一些修改，可以通过BeanPostProcessor进行
+>BeanFactoryPostProcessor operates on the bean configuration metadata; that is, the Spring IoC container allows a BeanFactoryPostProcessor to read the configuration metadata and potentially change it before the container instantiates any beans other than BeanFactoryPostProcessors
+
+
+BeanPostProcessors 跟 BeanFactoryPostProcessor在容器启动的时候，就会被检查到并被实例化出来; 所以lazy initialization对它们是无效的
+### BeanFactoryPostProcessor的两个实现, PropertyOverrideConfigurer vs PropertyPlaceholderConfigurer
+PropertyOverrideConfigurer,PropertyPlaceholderConfigurer 它们都是在bean的实例化之前，对bean的metadata做一些修改; 不同的是：
+- PropertyOverrideConfigurer，是push的方式，会从properties文件中将bean的metadata信息覆盖掉
+- PropertyPlaceholderConfigurer，是pull的方式，会从从properties文件中获取值，然后替代掉 占位符中的值; 通过它可以设置一个默认值，语法如下: 
+```
+<property name="url" value="jdbc:${dbname:defaultdb}"/>
+```
+
+## FactoryBean
+FactoryBean一般用户架构的基础层，对一些构造过程负载的bean可以考虑采用它; 比如 读取xml中的list，set，map，就会用到， 他们对应的FactoryBean是： 
+- ListFactoryBean
+- MapFactoryBean
+- SetFactoryBean 
+
+它的getObjectType()和 getObject()两个方法，会在启动的时候就被调用，一般会早于post-processor bean的创建
+>FactoryBean is a programmatic contract. Implementations are not supposed to rely on annotation-driven injection or other reflective facilities. 
+>getObjectType() getObject() invocations may arrive early in the bootstrap process, even ahead of any post-processor setup. If you need access other beans, implement BeanFactoryAware and obtain them programmatically.
+
+
+```
+        FactoryBean factoryBean = (FactoryBean) context.getBean("&customFactoryBean");
+        Class<?> cls = factoryBean.getObjectType();
+        System.out.println(cls.getName());
+
+        FactoryBean1 factoryBean1 = (FactoryBean1) context.getBean("customFactoryBean");
+        System.out.println(factoryBean1.getName());
+```
+```java
+@Component
+public class CustomFactoryBean implements FactoryBean<FactoryBean1> {
+    @Nullable
+    @Override
+    public FactoryBean1 getObject() throws Exception {
+        // 这里可以定义复杂的 bean的创建
+        FactoryBean1 result = new FactoryBean1();
+        result.setName("created from factoryBean");
+        return result;
+    }
+
+    @Nullable
+    @Override
+    public Class<?> getObjectType() {
+        return FactoryBean1.class;
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return false;
+    }
+
+```

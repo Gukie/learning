@@ -27,7 +27,7 @@ Bean factory implementations should support the standard bean lifecycle interfac
 >- a custom init-method definition
 >- postProcessAfterInitialization methods of BeanPostProcessors
 
-
+---
 ## BeanFactoryPostProcessor
 BeanFactoryPostProcessor 是在容器中的所有bean开始实例化之前对metadata进行一些修改(所谓的metadata就是bean的定义，比如类的field是什么，field的值是多少)
 可以通过实现BeanFactoryPostProcessor，对bean的definition进行一些修改. 
@@ -43,7 +43,7 @@ PropertyOverrideConfigurer,PropertyPlaceholderConfigurer 它们都是在bean的�
 ```
 <property name="url" value="jdbc:${dbname:defaultdb}"/>
 ```
-
+---
 ## FactoryBean
 FactoryBean一般用户架构的基础层，对一些构造过程负载的bean可以考虑采用它; 比如 读取xml中的list，set，map，就会用到， 他们对应的FactoryBean是： 
 - ListFactoryBean

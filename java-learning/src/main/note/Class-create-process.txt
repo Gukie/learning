@@ -29,7 +29,7 @@
         Class.forName(String className) 会默认做这一步; 而ClassLoader则不会; 这样Class.forName就可以通过static block，做一些加载的动作了
 
 
- Class.forName()的源码：
+Class.forName()的源码：
     ```
      public static Class<?> forName(String className)
                     throws ClassNotFoundException {
@@ -43,7 +43,7 @@
                                                 Class<?> caller) throws ClassNotFoundException;
      ```
 
-     ClassLoader#loadClass，不会有resolve阶段，即不会进行使用的引用的check
+ClassLoader#loadClass，不会有resolve阶段，即不会进行使用的引用的check
 ```
      public Class<?> loadClass(String name) throws ClassNotFoundException {
              return loadClass(name, false);

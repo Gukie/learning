@@ -1,6 +1,6 @@
 package com.lokia.basic;
 
-import org.springframework.util.CollectionUtils;
+import com.lokia.CollectionUtils;
 
 import java.util.*;
 

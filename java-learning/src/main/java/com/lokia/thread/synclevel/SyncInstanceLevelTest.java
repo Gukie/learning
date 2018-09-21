@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- *
+ *refer：https://howtodoinjava.com/java/multi-threading/object-vs-class-level-locking/
  */
 public class SyncInstanceLevelTest {
 

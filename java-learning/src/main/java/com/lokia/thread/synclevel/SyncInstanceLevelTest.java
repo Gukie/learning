@@ -28,7 +28,6 @@ public class SyncInstanceLevelTest {
         } else {
             System.out.println("************ sync on class level ************");
             // 同一个class的instance，只会有一个实例运行，这个实例的方法没有结束，其他实例都得等着
-            // TODO 为什么只有线程1执行了，其他的不会执行
             for (int i = 0; i < 5; i++) {
                 SyncObj syncObj = new SyncObj((i + 1) + "");
                 pool.submit(() -> {

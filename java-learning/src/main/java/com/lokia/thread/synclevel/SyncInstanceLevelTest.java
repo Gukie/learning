@@ -27,23 +27,23 @@ public class SyncInstanceLevelTest {
             }
         } else {
             System.out.println("************ sync on class level ************");
-            // 同一个class的instance，只会有一个实例运行，这个实例的方法没有结束，其他实例都得等着
+            // 锁住的是class对象，对实例是没有影响对； 锁住class对象对时候，只对静态方法有影响，对实例方法没有影响；
             for (int i = 0; i < 5; i++) {
                 SyncObj syncObj = new SyncObj((i + 1) + "");
                 pool.submit(() -> {
                     syncObj.syncOnClass();
+
                 });
+                pool.submit(()-> syncObj.syncOnInstance());
             }
         }
 
 
         try {
-//            pool.shutdown();
+            pool.shutdown();
             pool.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }finally{
-            pool.shutdown();
         }
 
         System.out.println("all have finished...");

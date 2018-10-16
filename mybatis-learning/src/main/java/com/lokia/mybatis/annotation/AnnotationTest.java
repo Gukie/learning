@@ -1,5 +1,6 @@
 package com.lokia.mybatis.annotation;
 
+import com.lokia.mybatis.annotation.mapper.BuildingMapper;
 import com.lokia.mybatis.bean.Building;
 import org.apache.ibatis.datasource.pooled.PooledDataSource;
 import org.apache.ibatis.io.Resources;

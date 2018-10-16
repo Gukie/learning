@@ -19,4 +19,5 @@ public interface BuildingMapper {
     @Update("update building set name = #{name} where id=#{id}")
     int updateName(Building building);
 
+    Building getById4SecondCache(String id);
 }

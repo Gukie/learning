@@ -3,8 +3,6 @@ package com.lokia.mybatis.annotation.provider;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.jdbc.SQL;
 
-import java.util.List;
-
 public class BuildingSelectProvider {
 
     /**

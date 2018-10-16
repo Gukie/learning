@@ -23,16 +23,25 @@ public class AnnotationTest {
 
         String fileLocation = "mybatis-config.xml";
         SqlSessionFactory sessionFactory = getSqlSessionFactory(fileLocation);
-        SqlSession sqlSession = sessionFactory.openSession();
-        try {
+//        SqlSession sqlSession = sessionFactory.openSession();
+//        try {
+//            BuildingMapper buildingMapper = sqlSession.getMapper(BuildingMapper.class);
+//            Building building = buildingMapper.getById("BD15101103674482");
+//            System.out.println(building);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }finally {
+//            // release resource.
+//            sqlSession.close();
+//        }
+
+
+        try(SqlSession sqlSession = sessionFactory.openSession()) {
             BuildingMapper buildingMapper = sqlSession.getMapper(BuildingMapper.class);
             Building building = buildingMapper.getById("BD15101103674482");
             System.out.println(building);
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            // release resource.
-            sqlSession.close();
         }
     }
 

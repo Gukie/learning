@@ -3,6 +3,11 @@
 
 ### note
 1. plugin的化，是采用代理的方式对目标对象进行代理
+2. 自己写的Plugin，需要加上注解@Intercepts. 并且只能在几个类中加入plugin, 这个可以从Interceptor.pluginAll的调用方看出来
+>- ParameterHandler
+>- ResultSetHandler
+>- Executor
+>- StatementHandler
 
 ```java
 public class InterceptorChain {

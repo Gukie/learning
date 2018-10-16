@@ -23,7 +23,10 @@ public class TimeRecordPlugin implements Interceptor {
     }
 
     public Object plugin(Object target) {
-        return Plugin.wrap(target,this);
+        if(target instanceof Executor){
+            return Plugin.wrap(target,this);
+        }
+        return target;
     }
 
     public void setProperties(Properties properties) {

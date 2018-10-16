@@ -12,6 +12,12 @@
         <!--<setting name="localCacheScope" value="STATEMENT"/>-->
         <setting name="localCacheScope" value="SESSION"/>
     </settings>
+
+    <!-- 顺序是有要求的，不能放在environments后面 -->
+    <plugins>
+        <plugin interceptor="com.lokia.mybatis.plugin.TimeRecordPlugin"></plugin>
+    </plugins>
+
     <environments default="dev">
         <environment id="dev">
             <transactionManager type="JDBC"></transactionManager>

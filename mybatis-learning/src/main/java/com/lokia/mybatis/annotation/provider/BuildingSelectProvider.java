@@ -24,7 +24,7 @@ public class BuildingSelectProvider {
             {
               SELECT("*");
               FROM("building");
-              WHERE("name like #{name}");
+              WHERE("name like concat('%',#{name},'%')");
               ORDER_BY(orderBy);
 
             }

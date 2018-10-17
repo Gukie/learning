@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -46,6 +47,11 @@ public class AnnotationTest {
             System.out.println(building);
             building = buildingMapper.getById("BD15101103674482");
             System.out.println(building);
+
+            List<Building> buildingList =  buildingMapper.getByName("杭","id");
+            buildingList.forEach(item->{
+                System.out.println(item);
+            });
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

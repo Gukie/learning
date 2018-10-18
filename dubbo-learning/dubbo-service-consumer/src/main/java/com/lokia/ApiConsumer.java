@@ -1,9 +1,9 @@
 package com.lokia;
 
+import com.alibaba.dubbo.config.ApplicationConfig;
+import com.alibaba.dubbo.config.ReferenceConfig;
+import com.alibaba.dubbo.config.RegistryConfig;
 import com.lokia.service.UserService;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.config.RegistryConfig;
 
 public class ApiConsumer {
     public static void main(String[] args) {
@@ -12,7 +12,8 @@ public class ApiConsumer {
         applicationConfig.setName("dubbo-service-consumer");
 
         RegistryConfig registryConfig = new RegistryConfig();
-        registryConfig.setAddress("localhost:9090");
+        registryConfig.setAddress("zookeeper://127.0.0.1:2181");
+        registryConfig.setClient("zkclient");
 
         ReferenceConfig referenceConfig = new ReferenceConfig();
         referenceConfig.setInterface(UserService.class);
@@ -22,8 +23,8 @@ public class ApiConsumer {
         referenceConfig.setVersion("1.0.0");
 
 
-        Object result = referenceConfig.get();
-        System.out.println(result);
+        UserService user = (UserService) referenceConfig.get();
+        System.out.println(user.getName());
 
     }
 }

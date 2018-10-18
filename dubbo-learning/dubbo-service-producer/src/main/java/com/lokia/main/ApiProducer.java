@@ -16,7 +16,7 @@ public class ApiProducer {
         applicationConfig.setName("dubbo-service-producer");
 
         RegistryConfig registryConfig = new RegistryConfig();
-        registryConfig.setAddress("zookeeper://127.0.0.1:2181");
+        registryConfig.setAddress("zookeeper://127.0.0.1:2181"); // this address should be the one which can be connected, otherwise registry will fail.
         registryConfig.setClient("zkclient");
 
 

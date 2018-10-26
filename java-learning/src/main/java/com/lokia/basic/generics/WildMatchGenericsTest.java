@@ -1,6 +1,8 @@
 package com.lokia.basic.generics;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,8 +35,27 @@ public class WildMatchGenericsTest {
         GenericsExtendBean<Long> genericsExtendBean = new GenericsExtendBean<>();
         printClassInfo(genericsExtendBean);
 
+        System.out.println("************* do bad thing via generic*********");
+        doBadThingViaGenerics();
+    }
 
+    private static void doBadThingViaGenerics() {
+        List<Double> doubleList = new ArrayList<>();
+        try {
+            Method method = doubleList.getClass().getMethod("add", Object.class);
+            method.invoke(doubleList,"C10K");
+            method.invoke(doubleList,100);
+            method.invoke(doubleList,new GenericsBean<>());
+//            doubleList.forEach(item->{ //这种方式，item是一个Double类型，会有类型转换的问题
+//                System.out.println(item);
+//            });
+            for (Object obj : doubleList) {
+                System.out.println(obj);
 
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 
     private static<T> void printClassInfo(T genericsBean) {

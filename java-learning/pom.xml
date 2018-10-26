@@ -41,27 +41,25 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/javax.validation/validation-api -->
+        <!-- for validation start -->
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
             <version>2.0.1.Final</version>
         </dependency>
+        <!--hibernate-validator rely one this dependency -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
             <version>6.0.13.Final</version>
         </dependency>
+        <!--hibernate-validator has it, but its scope is provided. spring boot use the container-one -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.el</artifactId>
             <version>3.0.1-b09</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>javax.validation</groupId>-->
-            <!--<artifactId>validation-api</artifactId>-->
-            <!--<version>1.1.0.Final</version>-->
-        <!--</dependency>-->
+        <!-- for validation end -->
 
 
     </dependencies>

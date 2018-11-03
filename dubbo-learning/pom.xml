@@ -15,6 +15,7 @@
         <module>dubbo-service-api</module>
         <module>dubbo-service-consumer</module>
         <module>dubbo-service-producer</module>
+        <module>dubbo-spring-parent</module>
     </modules>
 
     <properties>

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * refer: https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html
+ */
 public class CollectorsTest {
 
     public static void main(String[] args) {

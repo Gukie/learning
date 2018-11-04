@@ -20,17 +20,39 @@ public class CollectorsTest {
             System.out.println();
         });
 
+        System.out.println("====================================");
+        Map<String,Map<String,List<Student>>> sexCityGroup  = students.stream().collect(Collectors.groupingBy(Student::getSex,Collectors.groupingBy(Student::getCity)));
+        sexCityGroup.forEach((sex,entryList)->{
+            System.out.println("************ "+sex+" ************");
+            entryList.forEach((city,itemList)->{
+                System.out.println("****** "+city+" ******");
+                itemList.stream().forEach(item->System.out.println(item));
+
+                System.out.println();
+            });
+
+
+        });
+
+
+
     }
 
     private static List<Student> generateStudents() {
 
-        Student student = new Student("kobe","LA");
-        Student student1 = new Student("jason","HZ");
-        Student student2 = new Student("shu","HZ");
-        Student student3 = new Student("yaoming","SH");
-        Student student4 = new Student("king.zhou","SH");
-        Student student5 = new Student("bryant","LA");
+        Student student = new Student("kobe","LA","M");
+        Student student1 = new Student("jason","HZ","M");
+        Student student2 = new Student("shu","HZ","M");
+        Student student3 = new Student("yaoming","SH","M");
+        Student student4 = new Student("king.zhou","SH","M");
+        Student student5 = new Student("bryant","LA","M");
 
-        return Arrays.asList(student,student1,student2,student3,student4,student5);
+        Student student6 = new Student("lily","LA","F");
+        Student student7 = new Student("jolion","HZ","F");
+        Student student8 = new Student("shaly","HZ","F");
+        Student student9 = new Student("hebe","SH","F");
+        Student student10 = new Student("ella","SH","F");
+
+        return Arrays.asList(student,student1,student2,student3,student4,student5,student6,student7,student8,student9,student10);
     }
 }

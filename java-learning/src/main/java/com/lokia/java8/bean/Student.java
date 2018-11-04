@@ -14,6 +14,12 @@ public class Student {
         setCity(city);
     }
 
+    public Student(String name,String city,String sex){
+        setName(name);
+        setCity(city);
+        setSex(sex);
+    }
+
     private String name;
     private String city;
     private String sex;

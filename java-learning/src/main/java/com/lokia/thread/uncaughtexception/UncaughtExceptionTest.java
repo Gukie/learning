@@ -1,7 +1,6 @@
 package com.lokia.thread.uncaughtexception;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * @author gushu
@@ -9,7 +8,7 @@ import java.util.Optional;
  */
 public class UncaughtExceptionTest {
     public static void main(String[] args) {
-        Thread thread = new Thread(new ThreadTest(),"uncaught-exception-thread");
+        Thread thread = new Thread(new RunnableTask(),"uncaught-exception-thread");
         thread.setUncaughtExceptionHandler((t, e) -> {
             System.out.println("uncaught exception*****: ");
             e.printStackTrace(System.out);
